@@ -1,8 +1,8 @@
 import numpy as np
 from scipy.sparse.linalg import spsolve
-from AUX.AUX_functions import *
+from aux.auxFunctions import *
 
-class Memoize(object):
+class memoize(object):
     '''
     This class is a way to cache the result of a function, as well as its 1st and 2nd derivatives.
     SciPy's minimize() needs to be passed distinct objects for the jacobian + hessian, typically

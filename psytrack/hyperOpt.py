@@ -5,26 +5,27 @@ from scipy.sparse.linalg import spsolve
 
 from aux.auxFunctions import *
 from getMAP import getMAP, getPosteriorTerms
-        
 
-def hyperOpt(dat, hyper, weights, optList, 
-               method=None, showOpt=0, jump=2):
+
+def hyperOpt(dat, hyper, weights, optList,
+             method=None, showOpt=0, jump=2):
     '''
     04/30/2017 NAR
 
-    Given data and set of hyperparameters, uses decoupled Laplace to find the optimal
-    hyperparameter values (i.e. the sigmas that maximize evidence)
-    
+    Given data and set of hyperparameters, uses decoupled Laplace to find the
+    optimal hyperparameter values (i.e. the sigmas that maximize evidence)
+
     Args:
         dat : dict, all data from a specific subject
-        hyper : dict, hyperparameters and initial values used to construct the prior
+        hyper : dict, hyperparameters and initial values used to construct prior
             Must at least include sigma, can also include sigInit, sigDay
         weights : dict, name and count of which weights in dat['inputs'] to fit
         optList : list, hyperparameters in 'hyper' to be optimized
         method : str, control over type of fit,
             None is standard, '_days' and '_constant' also supported
-        showOpt : int, 0 : no text, 1 : verbose, 2+ : Hess + deriv check, done showOpt-1 times
-        jump : int, how many times the alg can find suboptimal evidence before quitting
+        showOpt : int, 0 : no text, 1 : verbose,
+            2+ : Hess + deriv check, done showOpt-1 times
+        jump : int, how many times the alg can find suboptimal evd before quit
 
     Returns:
         best_hyper : hyperparameter values that maximizes evidence of data
@@ -32,58 +33,59 @@ def hyperOpt(dat, hyper, weights, optList,
         best_wMode : the MAP weights found using best_hyper, maximizing logEvd
         best_Hess : dict, the Hessian found using best_hyper, maximizing logEvd
     '''
-    
-    ### Initialization of optimization
-    opt_keywords = {'weights' : weights, 'method' : method, 'dat' : dat, 
-                    'optList' : optList, 'hyper' : hyper}
-    
+
+    # Initialization of optimization
+    opt_keywords = {'weights': weights, 'method': method, 'dat': dat,
+                    'optList': optList, 'hyper': hyper}
+
     current_hyper = hyper.copy()
     best_logEvd = None
-    
-    for val in optList:
-        if (val not in hyper) or (hyper[val] is None): 
-            raise Exception('cannot optimize a hyperparameter not given')
-    
 
-    ### Optimization
+    for val in optList:
+        if (val not in hyper) or (hyper[val] is None):
+            raise Exception('cannot optimize a hyperparameter not given')
+
+    # Optimization
     current_jump = jump
-    while True: 
-        
+    while True:
+
         if best_logEvd is None:
             E0 = None
         else:
             E0 = llstruct['eMode']
 
-        ### First get MAP for initial hyperparameter setting
-        wMode, Hess, logEvd, llstruct = getMAP(dat, current_hyper, weights, E0=E0,
-                                               method=method, showOpt=int(showOpt>1))
-        
-        ### Update bests
-        if best_logEvd is None: best_logEvd = logEvd
+        # First get MAP for initial hyperparameter setting
+        wMode, Hess, logEvd, llstruct = getMAP(dat, current_hyper, weights,
+                                               E0=E0, method=method, showOpt=int(showOpt > 1))
+
+        # Update bests
+        if best_logEvd is None:
+            best_logEvd = logEvd
         if logEvd >= best_logEvd:
             current_jump = jump
             best_hyper = current_hyper.copy()
             best_logEvd = logEvd
             best_wMode = wMode
             best_Hess = Hess
-        else: # If worse logEvd found, reduce jump by one and move hypers to midpoints
+        # If worse logEvd found, reduce jump by one and move hypers to midpoints
+        else:
             current_jump -= 1
             for val in optList:
-                current_hyper.update({val : (current_hyper[val] + best_hyper[val])/2 })
+                current_hyper.update(
+                    {val: (current_hyper[val] + best_hyper[val])/2})
 
-        
         if showOpt:
-            print("\nInitial evidence:", np.round(logEvd,5))
-            for val in optList: print(val, np.round(np.log2(current_hyper[val]),4))
+            print("\nInitial evidence:", np.round(logEvd, 5))
+            for val in optList:
+                print(val, np.round(np.log2(current_hyper[val]), 4))
 
-
-        ### Jump to end if missed evidence enough times
+        # Jump to end if missed evidence enough times
         if not current_jump:
-            if showOpt: print("Jumping to end due to no improvement in evidence")
+            if showOpt:
+                print("Jumping to end due to no improvement in evidence")
             break
 
-
-        ### Now decouple prior terms from likelihood terms and store values        
+        # Now decouple prior terms from likelihood terms and store values
         K = llstruct['lT']['ddlogli']['K']
         H = llstruct['lT']['ddlogli']['H']
         ddlogprior = llstruct['pT']['ddlogprior']
@@ -91,108 +93,113 @@ def hyperOpt(dat, hyper, weights, optList,
 
         LL_v = DTinv_v(H @ Dinv_v(eMode, K), K) + ddlogprior @ eMode
 
-        opt_keywords.update({'LL_terms' : llstruct['lT']['ddlogli'], 'LL_v' : LL_v})
+        opt_keywords.update(
+            {'LL_terms': llstruct['lT']['ddlogli'], 'LL_v': LL_v})
 
-        
-        ### Optimize over hyperparameters
+        # Optimize over hyperparameters
         if showOpt:
             print("\nStarting optimization...")
-            opts = {'maxiter' : 15,'disp' : True}; callback = print
+            opts = {'maxiter': 15, 'disp': True}
+            callback = print
         else:
-            opts = {'maxiter' : 15,'disp' : False}; callback = None
-        
-        
+            opts = {'maxiter': 15, 'disp': False}
+            callback = None
+
         optVals = []
         for val in optList:
             if np.isscalar(current_hyper[val]):
                 optVals += [np.log2(current_hyper[val])]
             else:
                 optVals += np.log2(current_hyper[val]).tolist()
-        
-        result = minimize(HyperOpt1D_lossfun,optVals,
+
+        result = minimize(hyperOpt_lossfun, optVals,
                           args=opt_keywords, method='BFGS',
                           options=opts, callback=callback)
 
-        if showOpt: print("\nRecovered evidence:", np.round(-result.fun,5))
-            
+        if showOpt:
+            print("\nRecovered evidence:", np.round(-result.fun, 5))
+
         count = 0
         for val in optList:
             if np.isscalar(current_hyper[val]):
-                current_hyper.update({val : 2**result.x[count]})
+                current_hyper.update({val: 2**result.x[count]})
                 count += 1
             else:
-                current_hyper.update({val : 2**result.x[count:count+K]})
+                current_hyper.update({val: 2**result.x[count:count+K]})
                 count += K
-            if showOpt: print(val, np.round(np.log2(current_hyper[val]),4))
+            if showOpt:
+                print(val, np.round(np.log2(current_hyper[val]), 4))
 
-        
-        ### Test to see if hyperparameters have convereged
+        # Test to see if hyperparameters have convereged
         diff = np.linalg.norm((optVals - result.x)/optVals)
-        if showOpt: print('\nDifference:', np.round(diff,4))
-        if (diff < 0.1): break
-           
+        if showOpt:
+            print('\nDifference:', np.round(diff, 4))
+        if (diff < 0.1):
+            break
+
     # # If hyperparameters converged, recalculate evidence and wMode
     # # If evidence is not improving, no need to recalculate, jump to end
-    # if current_jump:        
+    # if current_jump:
     #     # Calculate true evidence of final set of hyperopt
     #     wMode, Hess, logEvd, llstruct = getMAP_PBups(dat,current_hyper,weights,
-    #                                                  method=method, showOpt=int(showOpt>1))
-        
+    #                                   method=method, showOpt=int(showOpt>1))
+
     #     if logEvd >= best_logEvd:
     #         best_hyper = current_hyper.copy()
     #         best_logEvd = logEvd
     #         best_wMode = wMode
 
-    if showOpt: 
-        print("Coverged! Final evidence:", np.round(best_logEvd,5))
+    if showOpt:
+        print("Coverged! Final evidence:", np.round(best_logEvd, 5))
         for val in optList:
-            print(val, np.round(np.log2(best_hyper[val]),4))
-    
+            print(val, np.round(np.log2(best_hyper[val]), 4))
+
     return best_hyper, best_logEvd, best_wMode, best_Hess
 
-        
-        
-def HyperOpt1D_lossfun(optVals, keywords):
+
+def hyperOpt_lossfun(optVals, keywords):
     '''
     04/30/2017 NAR
 
-    Loss function used by decoupled Lapalce to optimize for evidence over changes in sigma
-    
+    Loss function used by decoupled Lapalce to optimize for evidence over
+    changes in sigma
+
     Args:
-        optVals : hyperparameter values currently caluclating approximate evidence for 
-            corresponds to hyperparameters listed in OptList
+        optVals : hyperparameter values currently caluclating approximate
+            evidence for corresponds to hyperparameters listed in OptList
         keywords : dictionary of other values needed for optimization
             - the entry 'opt_vars' is a dictionary containing values specific to
                 the decoupled Lapalce optimization
 
     Returns:
-        -evd : the negative evidence (to be minimized) for the current sigma value
+        evd : the negative evidence (to be minimized) for the current sigma
+            value
     '''
-    
+
     # Recover N & K
     N = keywords['dat']['y'].shape[0]
     K = keywords['LL_terms']['K']
     method = keywords['method']
     dat = keywords['dat']
     weights = keywords['weights']
-    
+
     # Reconstruct the prior covariance
     hyper = keywords['hyper'].copy()
-    
+
     count = 0
     for val in keywords['optList']:
         if np.isscalar(hyper[val]):
-            hyper.update({val : 2**optVals[count]})
+            hyper.update({val: 2**optVals[count]})
             count += 1
         else:
-            hyper.update({val : 2**optVals[count:count+K]})
-            count += K    
-            
+            hyper.update({val: 2**optVals[count:count+K]})
+            count += K
 
-    ### Determine type of analysis (standard, constant, or day weights)
+    # Determine type of analysis (standard, constant, or day weights)
     if method is None:
         w_N = N
-        days = np.cumsum(dat['dayLength'], dtype=int)[:-1] # the first trial index of each new day
+        # the first trial index of each new day
+        days = np.cumsum(dat['dayLength'], dtype=int)[:-1]
         missing_trials = dat['missing_trials']
     elif method == "_constant":
         w_N = 1
@@ -200,24 +207,24 @@ def HyperOpt1D_lossfun(optVals, keywords):
         missing_trials = None
     elif method == "_days":
         w_N = len(dat['dayLength'])
-        days = np.arange(1,w_N, dtype=int)
+        days = np.arange(1, w_N, dtype=int)
         missing_trials = None
     else:
         raise Exception("method " + method + " not supported")
-        
+
     invSigma = make_invSigma(hyper, days, missing_trials, w_N, K)
     ddlogprior = -invSigma
-        
+
     # Retrieve terms for decoupled Laplace appx.
     H = keywords['LL_terms']['H']
     LL_v = keywords['LL_v']
-    
+
     # Decoupled Laplace appx to new epsilon given new sigma
-    DL_1 = DTv(LL_v,K)
+    DL_1 = DTv(LL_v, K)
     DL_2 = DT_X_D(ddlogprior, K)
-    DL_3 = spsolve(DL_2+H,DL_1)
-    E_flat = Dv(DL_3,K)
-    
+    DL_3 = spsolve(DL_2+H, DL_1)
+    E_flat = Dv(DL_3, K)
+
     # Calculate likelihood and prior terms with new epsilon
     pT, lT, _ = getPosteriorTerms(E_flat, hyper=hyper, method=method,
                                   dat=dat, weights=weights)
@@ -225,8 +232,7 @@ def HyperOpt1D_lossfun(optVals, keywords):
     # Calculate posterior term, then approximate evidence for new sigma
     center = DL_2 + lT['ddlogli']['H']
     logterm_post = (1/2)*sparse_logdet(center)
-    
-    evd = pT['logprior'] + lT['logli'] - logterm_post
-    
-    return -evd
 
+    evd = pT['logprior'] + lT['logli'] - logterm_post
+
+    return -evd
