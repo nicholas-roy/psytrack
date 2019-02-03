@@ -3,13 +3,20 @@ from scipy.optimize import minimize
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import spsolve
 
-from aux.auxFunctions import *
-from getMAP import getMAP, getPosteriorTerms
+from .getMAP import getMAP, getPosteriorTerms
+from psytrack.aux.auxFunctions import (
+    DTinv_v,
+    Dinv_v,
+    DTv,
+    Dv,
+    DT_X_D,
+    make_invSigma,
+    sparse_logdet,
+)
 
 
-def hyperOpt(dat, hyper, weights, optList,
-             method=None, showOpt=0, jump=2):
-    '''
+def hyperOpt(dat, hyper, weights, optList, method=None, showOpt=0, jump=2):
+    """
     04/30/2017 NAR
 
     Given data and set of hyperparameters, uses decoupled Laplace to find the
@@ -32,18 +39,23 @@ def hyperOpt(dat, hyper, weights, optList,
         best_logEvd : log-evidence associated with optimal hyperparameter values
         best_wMode : the MAP weights found using best_hyper, maximizing logEvd
         best_Hess : dict, the Hessian found using best_hyper, maximizing logEvd
-    '''
+    """
 
     # Initialization of optimization
-    opt_keywords = {'weights': weights, 'method': method, 'dat': dat,
-                    'optList': optList, 'hyper': hyper}
+    opt_keywords = {
+        "weights": weights,
+        "method": method,
+        "dat": dat,
+        "optList": optList,
+        "hyper": hyper,
+    }
 
     current_hyper = hyper.copy()
     best_logEvd = None
 
     for val in optList:
         if (val not in hyper) or (hyper[val] is None):
-            raise Exception('cannot optimize a hyperparameter not given')
+            raise Exception("cannot optimize a hyperparameter not given")
 
     # Optimization
     current_jump = jump
@@ -52,11 +64,16 @@ def hyperOpt(dat, hyper, weights, optList,
         if best_logEvd is None:
             E0 = None
         else:
-            E0 = llstruct['eMode']
+            E0 = llstruct["eMode"]  # pylint: disable=used-before-assignment
 
         # First get MAP for initial hyperparameter setting
-        wMode, Hess, logEvd, llstruct = getMAP(dat, current_hyper, weights,
-                                               E0=E0, method=method, showOpt=int(showOpt > 1))
+        wMode, Hess, logEvd, llstruct = getMAP(
+            dat,
+            current_hyper,
+            weights,
+            E0=E0,
+            method=method,
+            showOpt=int(showOpt > 1))
 
         # Update bests
         if best_logEvd is None:
@@ -71,8 +88,9 @@ def hyperOpt(dat, hyper, weights, optList,
         else:
             current_jump -= 1
             for val in optList:
-                current_hyper.update(
-                    {val: (current_hyper[val] + best_hyper[val])/2})
+                current_hyper.update({
+                    val: (current_hyper[val] + best_hyper[val]) / 2
+                })
 
         if showOpt:
             print("\nInitial evidence:", np.round(logEvd, 5))
@@ -86,23 +104,25 @@ def hyperOpt(dat, hyper, weights, optList,
             break
 
         # Now decouple prior terms from likelihood terms and store values
-        K = llstruct['lT']['ddlogli']['K']
-        H = llstruct['lT']['ddlogli']['H']
-        ddlogprior = llstruct['pT']['ddlogprior']
-        eMode = llstruct['eMode']
+        K = llstruct["lT"]["ddlogli"]["K"]
+        H = llstruct["lT"]["ddlogli"]["H"]
+        ddlogprior = llstruct["pT"]["ddlogprior"]
+        eMode = llstruct["eMode"]
 
         LL_v = DTinv_v(H @ Dinv_v(eMode, K), K) + ddlogprior @ eMode
 
-        opt_keywords.update(
-            {'LL_terms': llstruct['lT']['ddlogli'], 'LL_v': LL_v})
+        opt_keywords.update({
+            "LL_terms": llstruct["lT"]["ddlogli"],
+            "LL_v": LL_v
+        })
 
         # Optimize over hyperparameters
         if showOpt:
             print("\nStarting optimization...")
-            opts = {'maxiter': 15, 'disp': True}
+            opts = {"maxiter": 15, "disp": True}
             callback = print
         else:
-            opts = {'maxiter': 15, 'disp': False}
+            opts = {"maxiter": 15, "disp": False}
             callback = None
 
         optVals = []
@@ -112,9 +132,14 @@ def hyperOpt(dat, hyper, weights, optList,
             else:
                 optVals += np.log2(current_hyper[val]).tolist()
 
-        result = minimize(hyperOpt_lossfun, optVals,
-                          args=opt_keywords, method='BFGS',
-                          options=opts, callback=callback)
+        result = minimize(
+            hyperOpt_lossfun,
+            optVals,
+            args=opt_keywords,
+            method="BFGS",
+            options=opts,
+            callback=callback,
+        )
 
         if showOpt:
             print("\nRecovered evidence:", np.round(-result.fun, 5))
@@ -125,16 +150,16 @@ def hyperOpt(dat, hyper, weights, optList,
                 current_hyper.update({val: 2**result.x[count]})
                 count += 1
             else:
-                current_hyper.update({val: 2**result.x[count:count+K]})
+                current_hyper.update({val: 2**result.x[count:count + K]})
                 count += K
             if showOpt:
                 print(val, np.round(np.log2(current_hyper[val]), 4))
 
         # Test to see if hyperparameters have convereged
-        diff = np.linalg.norm((optVals - result.x)/optVals)
+        diff = np.linalg.norm((optVals - result.x) / optVals)
         if showOpt:
-            print('\nDifference:', np.round(diff, 4))
-        if (diff < 0.1):
+            print("\nDifference:", np.round(diff, 4))
+        if diff < 0.1:
             break
 
     # # If hyperparameters converged, recalculate evidence and wMode
@@ -158,7 +183,7 @@ def hyperOpt(dat, hyper, weights, optList,
 
 
 def hyperOpt_lossfun(optVals, keywords):
-    '''
+    """
     04/30/2017 NAR
 
     Loss function used by decoupled Lapalce to optimize for evidence over
@@ -174,39 +199,39 @@ def hyperOpt_lossfun(optVals, keywords):
     Returns:
         evd : the negative evidence (to be minimized) for the current sigma
             value
-    '''
+    """
 
     # Recover N & K
-    N = keywords['dat']['y'].shape[0]
-    K = keywords['LL_terms']['K']
-    method = keywords['method']
-    dat = keywords['dat']
-    weights = keywords['weights']
+    N = keywords["dat"]["y"].shape[0]
+    K = keywords["LL_terms"]["K"]
+    method = keywords["method"]
+    dat = keywords["dat"]
+    weights = keywords["weights"]
 
     # Reconstruct the prior covariance
-    hyper = keywords['hyper'].copy()
+    hyper = keywords["hyper"].copy()
 
     count = 0
-    for val in keywords['optList']:
+    for val in keywords["optList"]:
         if np.isscalar(hyper[val]):
             hyper.update({val: 2**optVals[count]})
             count += 1
         else:
-            hyper.update({val: 2**optVals[count:count+K]})
+            hyper.update({val: 2**optVals[count:count + K]})
             count += K
 
     # Determine type of analysis (standard, constant, or day weights)
     if method is None:
         w_N = N
         # the first trial index of each new day
-        days = np.cumsum(dat['dayLength'], dtype=int)[:-1]
-        missing_trials = dat['missing_trials']
+        days = np.cumsum(dat["dayLength"], dtype=int)[:-1]
+        missing_trials = dat["missing_trials"]
     elif method == "_constant":
         w_N = 1
         days = np.array([], dtype=int)
         missing_trials = None
     elif method == "_days":
-        w_N = len(dat['dayLength'])
+        w_N = len(dat["dayLength"])
         days = np.arange(1, w_N, dtype=int)
         missing_trials = None
     else:
@@ -216,23 +241,23 @@ def hyperOpt_lossfun(optVals, keywords):
     ddlogprior = -invSigma
 
     # Retrieve terms for decoupled Laplace appx.
-    H = keywords['LL_terms']['H']
-    LL_v = keywords['LL_v']
+    H = keywords["LL_terms"]["H"]
+    LL_v = keywords["LL_v"]
 
     # Decoupled Laplace appx to new epsilon given new sigma
     DL_1 = DTv(LL_v, K)
     DL_2 = DT_X_D(ddlogprior, K)
-    DL_3 = spsolve(DL_2+H, DL_1)
+    DL_3 = spsolve(DL_2 + H, DL_1)
     E_flat = Dv(DL_3, K)
 
     # Calculate likelihood and prior terms with new epsilon
-    pT, lT, _ = getPosteriorTerms(E_flat, hyper=hyper, method=method,
-                                  dat=dat, weights=weights)
+    pT, lT, _ = getPosteriorTerms(
+        E_flat, hyper=hyper, method=method, dat=dat, weights=weights)
 
     # Calculate posterior term, then approximate evidence for new sigma
-    center = DL_2 + lT['ddlogli']['H']
-    logterm_post = (1/2)*sparse_logdet(center)
+    center = DL_2 + lT["ddlogli"]["H"]
+    logterm_post = (1 / 2) * sparse_logdet(center)
 
-    evd = pT['logprior'] + lT['logli'] - logterm_post
+    evd = pT["logprior"] + lT["logli"] - logterm_post
 
     return -evd

@@ -1,14 +1,13 @@
 import numpy as np
 from datetime import datetime, timedelta
 from os import makedirs
+from .hyperOpt import hyperOpt
 
-from hyperOpt import hyperOpt
 
-
-def generateSim(K=4, N=64000, hyper={},
-                boundary=4.0, iterations=20, days=None, seed=42,
-                path='', save=False):
-    '''
+def generateSim(
+    K=4, N=64000, hyper={}, boundary=4.0, iterations=20, seed=42, savePath=None
+):
+    """
     Simulates weights, in addition to inputs and multiple realizations
     of responses. Simulation data is either saved to a file or returned
     directly.
@@ -34,57 +33,59 @@ def generateSim(K=4, N=64000, hyper={},
             simulation data was saved in the local directory
         save_dict | (save=False) : dict, contains all relevant info
             from the simulation 
-    '''
+    """
 
     # Reproducability
     np.random.seed(seed)
 
     # Supply default hyperparameters if necessary
-    sigmaDefault = 2**np.random.choice([-4., -5., -6., -7., -8.], size=K)
-    if 'sigma' not in hyper:
+    sigmaDefault = 2 ** np.random.choice([-4.0, -5.0, -6.0, -7.0, -8.0], size=K)
+    if "sigma" not in hyper:
         sigma = sigmaDefault
-    elif hyper['sigma'] is None:
+    elif hyper["sigma"] is None:
         sigma = sigmaDefault
-    elif np.isscalar(hyper['sigma']):
-        sigma = np.array([hyper['sigma']]*K)
-    elif ((type(hyper['sigma']) in [np.ndarray, list]) and
-          (len(hyper['sigma']) != K)):
-        sigma = hyper['sigma']
+    elif np.isscalar(hyper["sigma"]):
+        sigma = np.array([hyper["sigma"]] * K)
+    elif (type(hyper["sigma"]) in [np.ndarray, list]) and (len(hyper["sigma"]) != K):
+        sigma = hyper["sigma"]
     else:
-        raise Exception("hyper['sigma'] must be either a scalar or \
-            a list or array of len K")
+        raise Exception(
+            "hyper['sigma'] must be either a scalar or \
+            a list or array of len K"
+        )
 
-    sigInitDefault = np.array([4.0]*K) 
-    if 'sigInit' not in hyper:
+    sigInitDefault = np.array([4.0] * K)
+    if "sigInit" not in hyper:
         sigInit = sigInitDefault
-    elif hyper['sigInit'] is None:
+    elif hyper["sigInit"] is None:
         sigInit = sigInitDefault
-    elif np.isscalar(hyper['sigInit']):
-        sigInit = np.array([hyper['sigInit']]*K)
-    elif ((type(hyper['sigInit']) in [np.ndarray, list]) and
-          (len(hyper['sigInit']) != K)):
-        sigInit = hyper['sigInit']
+    elif np.isscalar(hyper["sigInit"]):
+        sigInit = np.array([hyper["sigInit"]] * K)
+    elif (type(hyper["sigInit"]) in [np.ndarray, list]) and (
+        len(hyper["sigInit"]) != K
+    ):
+        sigInit = hyper["sigInit"]
     else:
-        raise Exception("hyper['sigInit'] must be either a scalar or \
-            a list or array of len K")
+        raise Exception(
+            "hyper['sigInit'] must be either a scalar or \
+            a list or array of len K"
+        )
 
     # sigDay not yet supported!
-    if 'sigDay' in hyper and hyper['sigDay'] is not None:
+    if "sigDay" in hyper and hyper["sigDay"] is not None:
         raise Exception("sigDay not yet supported, please omit from hyper")
-    if days is not None:
-        raise Exception("sigDay not yet supported, please set days=None")
 
     # -------------
     # Simulation
     # -------------
 
     # Simulate inputs
-    X = np.random.normal(size=(N, K)) 
+    X = np.random.normal(size=(N, K))
 
     # Simulate weights
     E = np.zeros((N, K))
     E[0] = np.random.normal(scale=sigInit, size=K)
-    E[1:] = np.random.normal(scale=sigma, size=(N-1, K))
+    E[1:] = np.random.normal(scale=sigma, size=(N - 1, K))
     W = np.cumsum(E, axis=0)
 
     # Impose a ceiling and floor boundary on W
@@ -93,49 +94,55 @@ def generateSim(K=4, N=64000, hyper={},
         while cross.any():
             ind = np.where(cross)[0][0]
             if W[ind, i] < -boundary:
-                W[ind:, i] = -2*boundary - W[ind:, i]
+                W[ind:, i] = -2 * boundary - W[ind:, i]
             else:
-                W[ind:, i] = 2*boundary - W[ind:, i]
+                W[ind:, i] = 2 * boundary - W[ind:, i]
             cross = (W[:, i] < -boundary) | (W[:, i] > boundary)
 
     # Save data
-    save_dict = {'sigInit': sigInit, 'sigma': sigma, 'seed': seed,
-                 'W': W, 'X': X, 'K': K, 'N': N}
+    save_dict = {
+        "sigInit": sigInit,
+        "sigma": sigma,
+        "seed": seed,
+        "W": W,
+        "X": X,
+        "K": K,
+        "N": N,
+    }
 
     # Simulate behavioral realizations in advance
-    pR = 1.0/(1.0 + np.exp(-np.sum(X*W, axis=1)))
+    pR = 1.0 / (1.0 + np.exp(-np.sum(X * W, axis=1)))
 
     all_simy = []
     for i in range(iterations):
-        sim_y = (pR > np.random.rand(len(pR))).astype(
-            int) + 1  # 1 for L, 2 for R
+        sim_y = (pR > np.random.rand(len(pR))).astype(int) + 1  # 1 for L, 2 for R
         all_simy += [sim_y]
 
     # Update saved data to include behavior
-    save_dict.update({'all_Y': all_simy})
+    save_dict.update({"all_Y": all_simy})
 
     # Save & return file path OR return simulation data
-    if save:
+    if savePath is not None:
         # Creates unique file name from current datetime
-        folder = datetime.now().strftime('%Y%m%d_%H%M%S') + path
+        folder = datetime.now().strftime("%Y%m%d_%H%M%S") + savePath
         makedirs(folder)
 
-        save_path = folder + '/sim.npz'
-        np.savez_compressed(save_path, save_dict=save_dict)
+        fullSavePath = folder + "/sim.npz"
+        np.savez_compressed(fullSavePath, save_dict=save_dict)
 
-        return save_path
+        return fullSavePath
 
     else:
         return save_dict
 
 
 def recoverSim(data, N=None, iteration=0, save=False):
-    '''
+    """
     Recovers weights from the simulation data generated by generateSim()
     Can take in a filepath pointing to simulation data, or the simulation
     dict directly. Specify how many trials of data should be recovered, 
     and from which behavioral iteration (only one). Output is either saved
-    in same folder as geenrated data, or returned directly.
+    in same folder as generated data, or returned directly.
 
     Args:
         data : str or dict, either the filepath to data from generateSim()
@@ -152,15 +159,15 @@ def recoverSim(data, N=None, iteration=0, save=False):
             recovery data was saved in the local directory
         save_dict | (save=False) : dict, contains all relevant info
             from the recovery 
-    '''
+    """
 
     # Initialize saved recovery data
-    save_dict = {'iteration': iteration}
+    save_dict = {"iteration": iteration}
 
     # Readin simulation input
     if type(data) is str:
-        save_dict['simfile'] = data
-        readin = np.load(data)['save_dict'].item()
+        save_dict["simfile"] = data
+        readin = np.load(data)["save_dict"].item()
     elif type(data) is dict:
         readin = data
     else:
@@ -168,42 +175,42 @@ def recoverSim(data, N=None, iteration=0, save=False):
 
     # If number of trials not specified, use all trials of simulation
     if N is None:
-        N = readin['N']
-    save_dict['N'] = N
+        N = readin["N"]
+    save_dict["N"] = N
 
     # -------------
     # Recovery
     # -------------
 
     # Initialization of recovery
-    K = readin['K']
+    K = readin["K"]
     hyper_guess = {
         # 2**-6 is an arbitrary starting point for the search
-        'sigma': [2**-6]*K,
-        'sigInit': readin['sigInit'],
-        'sigDay': None
+        "sigma": [2 ** -6] * K,
+        "sigInit": readin["sigInit"],
+        "sigDay": None,
     }
-    optList = ['sigma']
-    weights = {'x': K}
+    optList = ["sigma"]
+    weights = {"x": K}
 
-    dat = {'inputs': {'x': readin['X'][:N, :K]},
-           'y': readin['all_Y'][iteration][:N]}
+    dat = {"inputs": {"x": readin["X"][:N, :K]}, "y": readin["all_Y"][iteration][:N]}
 
     # Run recovery, recording duration of recoverty
     START = datetime.now()
     hyp, evd, wMode, _ = hyperOpt(dat, hyper_guess, weights, optList)
     END = datetime.now()
 
-    save_dict.update({'K': K, 'hyp': hyp, 'evd': evd,
-                      'wMode': wMode, 'duration': END-START})
+    save_dict.update(
+        {"K": K, "hyp": hyp, "evd": evd, "wMode": wMode, "duration": END - START}
+    )
 
     # Save (only if generateSim was also saved) or return recovery results
     if save:
-        if 'simfile' not in save_dict:
-            raise Exception(
-                "Can only save recovery if generateSim was also saved")
-        save_path = save_dict['simfile'][:-4] + '_N' + \
-            str(N) + '_i' + str(iteration) + '.npz'
+        if "simfile" not in save_dict:
+            raise Exception("Can only save recovery if generateSim was also saved")
+        save_path = (
+            save_dict["simfile"][:-4] + "_N" + str(N) + "_i" + str(iteration) + ".npz"
+        )
         np.savez_compressed(save_path, save_dict=save_dict)
         return save_path
 
