@@ -16,10 +16,7 @@ from psytrack.aux.auxFunctions import (
 
 
 def hyperOpt(dat, hyper, weights, optList, method=None, showOpt=0, jump=2):
-    """
-    04/30/2017 NAR
-
-    Given data and set of hyperparameters, uses decoupled Laplace to find the
+    """Given data and set of hyperparameters, uses decoupled Laplace to find the
     optimal hyperparameter values (i.e. the sigmas that maximize evidence)
 
     Args:
@@ -43,21 +40,25 @@ def hyperOpt(dat, hyper, weights, optList, method=None, showOpt=0, jump=2):
 
     # Initialization of optimization
     opt_keywords = {
-        "weights": weights,
-        "method": method,
         "dat": dat,
-        "optList": optList,
         "hyper": hyper,
+        "weights": weights,
+        "optList": optList,
+        "method": method,
     }
 
     current_hyper = hyper.copy()
     best_logEvd = None
 
+    # Make sure all hyperparameters to be optimized are actually provided
     for val in optList:
         if (val not in hyper) or (hyper[val] is None):
             raise Exception("cannot optimize a hyperparameter not given")
 
-    # Optimization
+    # -----
+    # Hyperparameter Optimization
+    # -----
+
     current_jump = jump
     while True:
 
@@ -75,7 +76,7 @@ def hyperOpt(dat, hyper, weights, optList, method=None, showOpt=0, jump=2):
             method=method,
             showOpt=int(showOpt > 1))
 
-        # Update bests
+        # Update best variables
         if best_logEvd is None:
             best_logEvd = logEvd
         if logEvd >= best_logEvd:
@@ -84,8 +85,9 @@ def hyperOpt(dat, hyper, weights, optList, method=None, showOpt=0, jump=2):
             best_logEvd = logEvd
             best_wMode = wMode
             best_Hess = Hess
-        # If worse logEvd found, reduce jump by one and move hypers to midpoints
         else:
+            # If a worse logEvd found, reduce jump by one and
+            # move hypers to midpoints, keep old bests
             current_jump -= 1
             for val in optList:
                 current_hyper.update({
@@ -97,7 +99,7 @@ def hyperOpt(dat, hyper, weights, optList, method=None, showOpt=0, jump=2):
             for val in optList:
                 print(val, np.round(np.log2(current_hyper[val]), 4))
 
-        # Jump to end if missed evidence enough times
+        # Jump to end if evidence was worse enough times
         if not current_jump:
             if showOpt:
                 print("Jumping to end due to no improvement in evidence")
@@ -125,6 +127,7 @@ def hyperOpt(dat, hyper, weights, optList, method=None, showOpt=0, jump=2):
             opts = {"maxiter": 15, "disp": False}
             callback = None
 
+        # Do hyperparameter optimization in log2
         optVals = []
         for val in optList:
             if np.isscalar(current_hyper[val]):
@@ -183,22 +186,16 @@ def hyperOpt(dat, hyper, weights, optList, method=None, showOpt=0, jump=2):
 
 
 def hyperOpt_lossfun(optVals, keywords):
-    """
-    04/30/2017 NAR
-
-    Loss function used by decoupled Lapalce to optimize for evidence over
-    changes in sigma
+    """Loss function used by decoupled Laplace to optimize for evidence over
+    changes in hyperparameters
 
     Args:
         optVals : hyperparameter values currently caluclating approximate
             evidence for corresponds to hyperparameters listed in OptList
         keywords : dictionary of other values needed for optimization
-            - the entry 'opt_vars' is a dictionary containing values specific to
-                the decoupled Lapalce optimization
 
     Returns:
-        evd : the negative evidence (to be minimized) for the current sigma
-            value
+        evd : the negative evidence (to be minimized)
     """
 
     # Recover N & K

@@ -190,11 +190,8 @@ def getMAP(dat, hyper, weights, method=None, E0=None, showOpt=0):
 
 
 def negLogPost(*args):
-    """
-    5/12/2016 JHB
-    12/12/2016 NAR translated to Python
-
-    Returns negative log posterior (and its first and second derivative)
+    """Returns negative log posterior (and its first and second derivative)
+    Intermediary function to allow for getPosteriorTerms to be optimized
 
     Args:
         same as getPosteriorTerms()
@@ -218,15 +215,13 @@ def negLogPost(*args):
 
 
 def getPosteriorTerms(E_flat, dat, hyper, weights, method=None):
-    """
-    02/06/2017 NAR translated to Python
-
-    Given a sequence of parameters formatted as an N*K matrix, calculates
+    """Given a sequence of parameters formatted as an N*K matrix, calculates
     random-walk log priors & likelihoods and their derivatives
 
     Args:
         E_flat : array, the N*K epsilon parameters, flattened to a single
-        vector, ** all other args are same as in getMAP **
+        vector
+        ** all other args are same as in getMAP **
 
     Returns:
         priorTerms : dict, the log-prior as well as 1st + 2nd derivatives
@@ -250,7 +245,7 @@ def getPosteriorTerms(E_flat, dat, hyper, weights, method=None):
     if "missing_trials" not in dat:
         dat["missing_trials"] = None
 
-    # Unpack input
+    # Unpack input into g
     g = read_input(dat, weights)
     N, K = g.shape
 
