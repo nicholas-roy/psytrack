@@ -17,14 +17,14 @@ To Do:
 Py File | Document functions | Comment code | Format code | Test | Write Documentation
 getMAP | * | * | * | _ | _ | 
 hyperOpt | * | * | * | _ | _ | 
-runSim | _ | _ | _ | _ | _ | 
+runSim | * | * | * | _ | _ | 
 
 aux/
-  auxFunctions | _ | _ | _ | _ | _ | 
-  crossValidation | _ | _ | _ | _ | _ | 
-  invBlkTriDiag | _ | _ | _ | _ | _ | 
-  jacHessCheck | _ | _ | _ | _ | _ | 
-  memoize | _ | _ | _ | _ | _ | 
+  auxFunctions | * | * | * | _ | _ | 
+  crossValidation | * | * | * | _ | _ | 
+  invBlkTriDiag | * | * | * | _ | _ | 
+  jacHessCheck | * | * | * | _ | _ | 
+  memoize | * | * | * | _ | _ | 
 
 plot/
-  analysisFunctions | _ | _ | _ | _ | _ | 
+  analysisFunctions | * | * | * | _ | _ | 

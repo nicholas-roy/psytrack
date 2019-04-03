@@ -3,6 +3,8 @@ from scipy.sparse import csr_matrix, isspmatrix, diags, block_diag
 from scipy.sparse.linalg import inv
 from .auxFunctions import DT_X_D
 
+def getCredibleInterval(Hess):
+    return np.sqrt(invDiagHess(Hess)).reshape(Hess['K'],-1)
 
 def invDiagHess(Hess):
     """
@@ -22,7 +24,8 @@ def invDiagHess(Hess):
     # Rearrange matrix such that it's blocked by K, not by N
     K = Hess["K"]
     N = int(Hess["ddlogprior"].shape[0] / K)
-    ii = (np.reshape(np.arange(K * N), (N, -1), order="F").T).flatten(order="F")
+    ii = (np.reshape(np.arange(K * N), (N, -1),
+                     order="F").T).flatten(order="F")
     M = center[ii]
     M = M[:, ii]
 
@@ -38,8 +41,7 @@ def invDiagHess(Hess):
 
 def invBlkTriDiag(M, nn):
     """
-    06/22/2018 NAR, translated from MATLAB by JWP
-
+    
     Efficiently inverts a block tridiagonal (a block diagonal matrix 
     with off-diagonal blocks) matrix. Blocks are (nn,nn) with nblocks
     equal to the # of blocks.
@@ -81,43 +83,45 @@ def invBlkTriDiag(M, nn):
     # Extract blocks A, B, and C
     for ii in np.arange(1, nblocks - 1):
         inds = np.arange(nn) + ii * nn  # indices for center block
-        A[:, :, ii] = M[np.ix_(inds, inds - nn)].todense()  # below-diagonal block
+        A[:, :, ii] = M[np.ix_(inds,
+                               inds - nn)].todense()  # below-diagonal block
         B[:, :, ii] = M[np.ix_(inds, inds)].todense()  # middle diagonal block
-        C[:, :, ii] = M[np.ix_(inds, inds + nn)].todense()  # above diagonal block
+        C[:, :, ii] = M[np.ix_(inds,
+                               inds + nn)].todense()  # above diagonal block
 
     # Make a pass through data to compute D and E
     for ii in np.arange(1, nblocks - 1):
         # Forward recursion
         D[:, :, ii] = np.linalg.solve(
-            B[:, :, ii] - A[:, :, ii] @ D[:, :, ii - 1], C[:, :, ii]
-        )
+            B[:, :, ii] - A[:, :, ii] @ D[:, :, ii - 1], C[:, :, ii])
 
         # Backward recursion
         jj = nblocks - ii - 1
         E[:, :, jj] = np.linalg.solve(
-            B[:, :, jj] - C[:, :, jj] @ E[:, :, jj + 1], A[:, :, jj]
-        )
+            B[:, :, jj] - C[:, :, jj] @ E[:, :, jj + 1], A[:, :, jj])
 
     # Now form blocks of inverse covariance
     I = np.eye(nn)
     MinvBlocks = np.zeros((nn, nn, nblocks))
     MinvBelowDiagBlocks = np.zeros((nn, nn, nblocks - 1))
-    MinvBlocks[:, :, 0] = np.linalg.inv(B[:, :, 0] @ (I - D[:, :, 0] @ E[:, :, 1]))
-    MinvBlocks[:, :, -1] = np.linalg.inv(B[:, :, -1] - A[:, :, -1] @ D[:, :, -2])
+    MinvBlocks[:, :, 0] = np.linalg.inv(
+        B[:, :, 0] @ (I - D[:, :, 0] @ E[:, :, 1]))
+    MinvBlocks[:, :, -1] = np.linalg.inv(B[:, :, -1] -
+                                         A[:, :, -1] @ D[:, :, -2])
     for ii in np.arange(1, nblocks - 1):
         # Compute diagonal blocks of inverse
         MinvBlocks[:, :, ii] = np.linalg.inv(
             (B[:, :, ii] - A[:, :, ii] @ D[:, :, ii - 1])
-            @ (I - D[:, :, ii] @ E[:, :, ii + 1])
-        )
+            @ (I - D[:, :, ii] @ E[:, :, ii + 1]))
         # Compute below-diagonal blocks
-        MinvBelowDiagBlocks[:, :, ii - 1] = -D[:, :, ii - 1] @ MinvBlocks[:, :, ii]
+        MinvBelowDiagBlocks[:, :, ii -
+                            1] = -D[:, :, ii - 1] @ MinvBlocks[:, :, ii]
 
     MinvBelowDiagBlocks[:, :, -1] = -D[:, :, -2] @ MinvBlocks[:, :, -1]
 
     # Extract just the diagonal elements
     MinvDiag = np.zeros(nn * nblocks)
     for ii in np.arange(nblocks):
-        MinvDiag[ii * nn : (ii + 1) * nn] = np.diag(MinvBlocks[:, :, ii])
+        MinvDiag[ii * nn:(ii + 1) * nn] = np.diag(MinvBlocks[:, :, ii])
 
     return MinvDiag, MinvBlocks, MinvBelowDiagBlocks

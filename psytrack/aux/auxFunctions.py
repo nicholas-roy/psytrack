@@ -25,7 +25,7 @@ def myblk_diags(A):
     for i in range(K):
         for j in range(K):
             m = np.min([i, j])
-            d[j - i, m * N : (m + 1) * N] = A[:, i, j]
+            d[j - i, m * N:(m + 1) * N] = A[:, i, j]
 
     # After diagonals are constructed, use sparse function diags() to make
     # 	matrix, then blow up to full size
@@ -43,13 +43,30 @@ def sparse_logdet(A):
     http://stackoverflow.com/a/19616987  (first comment w/ Wikipedia link)
     """
     if not isspmatrix_csc(A):  # needed for splu() decomposition to work
-        raise Exception("sparse_logdet: matrix passed is not in sparse csc form")
+        raise Exception(
+            "sparse_logdet: matrix passed is not in sparse csc form")
 
     aux = splu(A)
-    return np.sum(np.log(np.abs(aux.L.diagonal())) + np.log(np.abs(aux.U.diagonal())))
+    return np.sum(
+        np.log(np.abs(aux.L.diagonal())) + np.log(np.abs(aux.U.diagonal())))
 
 
 def make_invSigma(hyper, days, missing_trials, N, K):
+    """Returns the banded prior matrix
+    
+    Constructs the random-walk prior, accounting for new sessions and trials
+    omitted for cross-validation
+    
+    Args:
+        hyper (dict): hyperparameters and values
+        days (array): indices of trials that start a session
+        missing_trials (array): indices of trials removed for cross-validation
+        N (int): number of trials
+        K (int): number of weights
+    
+    Returns:
+        (sparse array): prior matrix
+    """
 
     # Note: setting a sigma value at index i, adjusts the change between trials i-1 and i
     sigma = hyper["sigma"]
@@ -65,15 +82,15 @@ def make_invSigma(hyper, days, missing_trials, N, K):
         sigDay = sigma
 
     if np.isscalar(sigma):
-        invSigma_flat_k = np.ones(N) * sigma ** 2
-        invSigma_flat_k[days] = sigDay ** 2  # add sigDay to day changes
-        invSigma_flat_k[0] = sigInit ** 2  # add sigInit to beginning
+        invSigma_flat_k = np.ones(N) * sigma**2
+        invSigma_flat_k[days] = sigDay**2  # add sigDay to day changes
+        invSigma_flat_k[0] = sigInit**2  # add sigInit to beginning
 
         if missing_trials is not None:  # add extra sigma variance if a test trial gap
-            invSigma_flat_k += missing_trials * sigma ** 2
+            invSigma_flat_k += missing_trials * sigma**2
 
         invSigma_flat = np.tile(invSigma_flat_k, K)
-        return diags(invSigma_flat ** -1)
+        return diags(invSigma_flat**-1)
 
     elif type(sigma) in [np.ndarray, list]:
         if len(sigma) != K:
@@ -81,30 +98,43 @@ def make_invSigma(hyper, days, missing_trials, N, K):
 
         invSigma_flat = np.zeros(N * K)
         for k in range(K):
-            invSigma_flat[k * N : (k + 1) * N] = sigma[k] ** 2
+            invSigma_flat[k * N:(k + 1) * N] = sigma[k]**2
 
             if np.isscalar(sigDay):
-                invSigma_flat[k * N + days] = sigDay ** 2
+                invSigma_flat[k * N + days] = sigDay**2
             else:
-                invSigma_flat[k * N + days] = sigDay[k] ** 2
+                invSigma_flat[k * N + days] = sigDay[k]**2
 
             if np.isscalar(sigInit):
-                invSigma_flat[k * N] = sigInit ** 2
+                invSigma_flat[k * N] = sigInit**2
             else:
-                invSigma_flat[k * N] = sigInit[k] ** 2
+                invSigma_flat[k * N] = sigInit[k]**2
 
-            if (
-                missing_trials is not None
-            ):  # add extra sigma variance if a test trial gap
-                invSigma_flat[k * N : (k + 1) * N] += missing_trials * sigma[k] ** 2
+            if (missing_trials is
+                    not None):  # add extra sigma variance if a test trial gap
+                invSigma_flat[k * N:(k + 1) *
+                              N] += missing_trials * sigma[k]**2
 
-        return diags(invSigma_flat ** -1)
+        return diags(invSigma_flat**-1)
 
     else:
-        raise Exception("sigma must be of appropriate type, not" + str(type(sigma)))
+        raise Exception("sigma must be of appropriate type, not" +
+                        str(type(sigma)))
 
 
 def read_input(D, w):
+    """Creates carrier vector of inputs g
+    
+    From dataset D and dict of weights and counts w, collect all the inputs
+    into a single K x N matrix g
+    
+    Args:
+        D (dict): standard dataset
+        w (dict): count of each type of weight to include
+    
+    Returns:
+        g (array): matrix of inputs to model
+    """
 
     # Determine dimensions N and K, create g
     N = len(D["y"])
@@ -118,12 +148,13 @@ def read_input(D, w):
 
     for i in sorted(w.keys()):
         if i == "bias":
-            g[:, g_ind : g_ind + 1] = 1
+            g[:, g_ind:g_ind + 1] = 1
         else:
             try:
-                g[:, g_ind : g_ind + w[i]] = D["inputs"][i][:, : w[i]]
+                g[:, g_ind:g_ind + w[i]] = D["inputs"][i][:, :w[i]]
             except:
-                raise Exception(str(i) + " given in weights not in dataset inputs")
+                raise Exception(
+                    str(i) + " given in weights not in dataset inputs")
 
         g_ind += w[i]
 
@@ -131,6 +162,20 @@ def read_input(D, w):
 
 
 def trim(dat, START=0, END=0):
+    """Utility function for slicing a dataset with a start / end point
+    
+    Returns a standard data set that has been sliced according to START and END
+    Especially inportant for keeping session info intact
+    
+    Args:
+        dat (dict): a standard dataset
+        START (int): The trial where the new dataset should start, 0 is start
+        END (int): The trial where the new dataset should end, 0 is end, can
+            also take negative values
+    
+    Returns:
+        new_dat (dict): the trimmed dataset
+    """
 
     if (not START) and (not END):
         return dat
@@ -171,7 +216,7 @@ def trim(dat, START=0, END=0):
         cumdays = np.cumsum(new_dat["dayLength"])
         min_id = np.where(cumdays > START)[0][0]
         max_id = np.where(cumdays < END)[0][-1] + 1
-        new = new_dat["dayLength"][min_id : max_id + 1].copy()
+        new = new_dat["dayLength"][min_id:max_id + 1].copy()
         new[0] = cumdays[min_id] - START
         new[-1] = END - cumdays[max_id - 1]
         if len(new) == 1:

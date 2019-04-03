@@ -14,7 +14,7 @@ def jacHessCheck(fun, x0, *args, **kwargs):
         x0 : the point from which to evaluate the function
 
     Returns:
-        Nothing, simply prints out the analytic anf finite
+        Nothing, simply prints out the analytic and finite
         differencing results for both the jac and hess
     """
 
@@ -35,9 +35,8 @@ def jacHessCheck(fun, x0, *args, **kwargs):
     print("Finite Jac:  ", f2 - f1)
 
     if type(HH) is dict:
-        print(
-            "Analytic Hess:", np.sum(fun.hessian_prod2(x0, randjump, *args, **kwargs))
-        )
+        print("Analytic Hess:",
+              np.sum(fun.hessian_prod(x0, randjump, *args, **kwargs)))
     else:
         print("Analytic Hess:", np.sum(HH @ randjump))
     print("Finite Hess:  ", np.sum(JJ2 - JJ1))
@@ -55,8 +54,8 @@ def jacEltsCheck(fun, ind, x0, *args, **kwargs):
         x0 : the point from which to evaluate the function
 
     Returns:
-        Nothing, simply prints out the analytic anf finite
-        differencing results for both the jac and hess
+        Nothing, simply prints out the analytic and finite
+        differencing results for the jacobian
     """
 
     fun(x0, *args, **kwargs)
@@ -71,15 +70,15 @@ def jacEltsCheck(fun, ind, x0, *args, **kwargs):
 
     dJ = (f2 - f1) / 2 / eps
 
-    if np.sqrt((JJ[ind] - dJ) ** 2) > 1e-8:
-        print(ind, ": ", np.sqrt((JJ[ind] - dJ) ** 2))
+    if np.sqrt((JJ[ind] - dJ)**2) > 1e-8:
+        print(ind, ": ", np.sqrt((JJ[ind] - dJ)**2))
         print("Analytic Jac:", JJ[ind])
         print("Finite Jac:  ", dJ)
 
 
 def hessEltsCheck(fun, ind, x0, *args, **kwargs):
     """
-    Checks the accuracy of individual elements in the analytic Jacobian
+    Checks the accuracy of individual elements in the analytic Hessian
     of a function that is part of the Memoize class by calculating
     finite differences in the specified direction.
 
@@ -89,8 +88,8 @@ def hessEltsCheck(fun, ind, x0, *args, **kwargs):
         x0 : the point from which to evaluate the function
 
     Returns:
-        Nothing, simply prints out the analytic anf finite
-        differencing results for both the jac and hess
+        Nothing, simply prints out the analytic and finite
+        differencing results for the hessian
     """
 
     fun(x0, *args, **kwargs)
@@ -115,10 +114,9 @@ def hessEltsCheck(fun, ind, x0, *args, **kwargs):
     v12 = fun(x0 + (mask @ np.array([[-1], [1]]))[:, 0], *args, **kwargs)
     v22 = fun(x0 + (mask @ np.array([[1], [1]]))[:, 0], *args, **kwargs)
 
-    dH = ((v22 - v21) - (v12 - v11)) / 4 / eps ** 2
+    dH = ((v22 - v21) - (v12 - v11)) / 4 / eps**2
 
-    if (HH[ind[0], ind[1]] - dH) ** 2 > 1e-8:
+    if (HH[ind[0], ind[1]] - dH)**2 > 1e-8:
         print(ind[0], ind[1], " : ", HH[ind[0], ind[1]] - dH)
         print("Analytic Hess:", HH[ind[0], ind[1]])
         print("Finite Hess:  ", dH)
-

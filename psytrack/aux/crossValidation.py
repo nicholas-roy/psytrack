@@ -124,11 +124,12 @@ def Kfold_crossVal_check(testD, wMode, missing_trials, weights):
     all_gw = []
     test_count = 0  # trial in the test set
     for t in range(trainN):  # iterate through each training trial
-        for _ in range(
-            int(missing_trials[t])
-        ):  # if training trial followed by one or more test trials
+        
+        # if training trial followed by one or more test trials
+        for _ in range(int(missing_trials[t])):  
 
-            ### Currently use the weights form the nearest prior training trial, could do interpolation...
+            ### Currently use the weights form the nearest prior training
+            ### trial, could do interpolation...
             gw = g[test_count] @ wMode[:, t]
             yt = int(testD["y"][test_count]) - 1
 

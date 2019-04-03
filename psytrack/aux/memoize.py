@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.sparse.linalg import spsolve
-from aux.auxFunctions import *
+from .auxFunctions import DT_X_D, DTinv_v, Dinv_v
+
 
 class memoize(object):
     '''
@@ -46,7 +47,7 @@ class memoize(object):
             return self.jac
 
     # Checks if x has changed since last call and, if so, recalculates
-    # Returns hessian of function at x (in the form of a dict)        
+    # Returns hessian of function at x (in the form of a dict)
     def hessian(self, x, *args, **kwargs):
         if self.hess is not None and np.alltrue(x == self.x):
             return self.hess
@@ -69,4 +70,3 @@ class memoize(object):
         center = DT_X_D(ddlogprior, K) + H
 
         return -DTinv_v(center @ Dinv_v(p, K), K)
-
