@@ -1,0 +1,30 @@
+Future Upgrades:
+- add sigDay functionality to runSim()
+- add method functionality to getMAP() and hyperOpt()
+
+
+To Do:
+- fill out function documentation (**)
+- thoroughly comment code (*)
+- write documentation (*)
+- auto format all code (*)
+- make examples with notebook (*)
+- replicate paper figures
+- test code to insure it works (**)
+- design unit tests
+
+
+Py File | Document functions | Comment code | Format code | Test | Write Documentation
+getMAP | * | * | * | _ | _ | 
+hyperOpt | * | * | * | _ | _ | 
+runSim | * | * | * | _ | _ | 
+
+aux/
+  auxFunctions | * | * | * | _ | _ | 
+  crossValidation | * | * | * | _ | _ | 
+  invBlkTriDiag | * | * | * | _ | _ | 
+  jacHessCheck | * | * | * | _ | _ | 
+  memoize | * | * | * | _ | _ | 
+
+plot/
+  analysisFunctions | * | * | * | _ | _ | 
