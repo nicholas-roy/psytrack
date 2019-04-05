@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
 	name='psytrack',
-	version='0.1',
+	version='1.0.0',
 	description='Tool for tracking dynamic psychometric curves',
 	long_description=long_description,
 	long_description_content_type="text/markdown",
@@ -14,6 +14,12 @@ setuptools.setup(
 	author_email='nicholas.roy.42@gmail.com',
 	license='MIT',
     packages=setuptools.find_packages(),
+	install_requires=[
+          'numpy',
+		  'scipy',
+		  'matplotlib',
+		  'markdown',
+      ],
 	classifiers=[
 		"Programming Language :: Python :: 3",
 		"License :: OSI Approved :: MIT License",
