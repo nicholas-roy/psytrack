@@ -2,7 +2,7 @@
 
 PsyTrack is a package for fitting a dynamic psychophysical model to behavioral data as proposed in our 2018 NeurIPS paper, "[Efficient inference for time-varying behavior during learning](http://pillowlab.princeton.edu/pubs/Roy18_NeurIPS_dynamicPsychophys.pdf)."
 
-![alt text](./psytrack/examples/weights.png "Figure 1b from paper")
+![alt text](./psytrack/examples/weights.pdf "Figure 1b from paper")
 
 [//]: # ()
 
