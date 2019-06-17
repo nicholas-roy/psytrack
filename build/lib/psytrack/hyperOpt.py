@@ -4,7 +4,7 @@ from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import spsolve
 
 from .getMAP import getMAP, getPosteriorTerms
-from psytrack.helper.helperFunctions import (
+from psytrack.aux.auxFunctions import (
     DTinv_v,
     Dinv_v,
     DTv,

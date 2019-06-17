@@ -3,7 +3,7 @@ import matplotlib as mpl
 from matplotlib import pyplot as plt
 from scipy.ndimage import gaussian_filter
 
-from psytrack.helper.helperFunctions import read_input
+from psytrack.aux.auxFunctions import read_input
 
 
 def makeWeightPlot(wMode,
@@ -49,7 +49,7 @@ def makeWeightPlot(wMode,
     maxval = np.max(np.abs(wMode)) * 1.1  # largest magnitude of any weight
     cumdays = np.cumsum(outData['dayLength'])
     myrange = np.arange(START, END)
-    sigma = 50  # for smoothing performance and bias estimates
+    sigma = 20  # for smoothing performance and bias estimates
 
     # Custom labels for weights based on dataset
     label_names = {

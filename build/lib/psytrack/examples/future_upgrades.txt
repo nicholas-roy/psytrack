@@ -19,8 +19,8 @@ getMAP | * | * | * | _ | _ |
 hyperOpt | * | * | * | _ | _ | 
 runSim | * | * | * | _ | _ | 
 
-helper/
-  helperFunctions | * | * | * | _ | _ | 
+aux/
+  auxFunctions | * | * | * | _ | _ | 
   crossValidation | * | * | * | _ | _ | 
   invBlkTriDiag | * | * | * | _ | _ | 
   jacHessCheck | * | * | * | _ | _ | 
