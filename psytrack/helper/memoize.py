@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.sparse.linalg import spsolve
-from .auxFunctions import DT_X_D, DTinv_v, Dinv_v
+from .helperFunctions import DT_X_D, DTinv_v, Dinv_v
 
 
 class memoize(object):

@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.sparse import csr_matrix, isspmatrix, diags, block_diag
 from scipy.sparse.linalg import inv
-from .auxFunctions import DT_X_D
+from .helperFunctions import DT_X_D
 
 def getCredibleInterval(Hess):
     return np.sqrt(invDiagHess(Hess)).reshape(Hess['K'],-1)

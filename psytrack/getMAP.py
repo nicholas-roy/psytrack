@@ -1,9 +1,9 @@
 import numpy as np
 from scipy.optimize import minimize
 
-from psytrack.aux.memoize import memoize
-from psytrack.aux.jacHessCheck import jacHessCheck
-from psytrack.aux.auxFunctions import (
+from psytrack.helper.memoize import memoize
+from psytrack.helper.jacHessCheck import jacHessCheck
+from psytrack.helper.helperFunctions import (
     DT_X_D,
     sparse_logdet,
     read_input,

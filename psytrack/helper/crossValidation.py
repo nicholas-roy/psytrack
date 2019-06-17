@@ -1,5 +1,5 @@
 import numpy as np
-from .auxFunctions import read_input
+from .helperFunctions import read_input
 
 
 def Kfold_crossVal(D, F=10, seed=None):
