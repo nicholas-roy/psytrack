@@ -182,7 +182,7 @@ def hyperOpt(dat, hyper, weights, optList, method=None, showOpt=0, jump=2):
         for val in optList:
             print(val, np.round(np.log2(best_hyper[val]), 4))
 
-    return best_hyper, best_logEvd, best_wMode, best_Hess
+    return best_hyper, best_logEvd, best_wMode, best_Hess, result.hess_inv
 
 
 def hyperOpt_lossfun(optVals, keywords):
