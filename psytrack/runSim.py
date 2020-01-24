@@ -225,7 +225,7 @@ def recoverSim(data, N=None, iteration=0, save=False):
 
     # Run recovery, recording duration of recoverty
     START = datetime.now()
-    hyp, evd, wMode, hess, hyper_res = hyperOpt(dat, hyper_guess, weights, optList)
+    hyp, evd, wMode, hess, hyper_err = hyperOpt(dat, hyper_guess, weights, optList)
     END = datetime.now()
 
     save_dict.update({
@@ -235,7 +235,7 @@ def recoverSim(data, N=None, iteration=0, save=False):
         "evd": evd,
         "wMode": wMode,
         "hess" : hess,
-        "hyper_res" : hyper_res,
+        "hyper_err" : hyper_err,
         "duration": END - START
     })
 

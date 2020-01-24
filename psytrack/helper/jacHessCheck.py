@@ -120,3 +120,51 @@ def hessEltsCheck(fun, ind, x0, *args, **kwargs):
         print(ind[0], ind[1], " : ", HH[ind[0], ind[1]] - dH)
         print("Analytic Hess:", HH[ind[0], ind[1]])
         print("Finite Hess:  ", dH)
+
+
+
+def compHess(fun, x0, dx, kwargs):
+    """Numerically computes the Hessian of a function fun around point x0
+    
+    Expects fun to have sytax:  y = fun(x, varargin)
+
+    Args:
+        fun: @(x) function handle of a real valued function that takes column vector
+        x0: (n x 1) point at which Hessian and gradient are estimated
+        dx: (1) or (n x 1) step size for finite difference
+        extra arguments are passed to the fun
+
+    Returns:
+        H: Hessian estimate
+        g: gradient estiamte
+    """
+
+    n = len(x0)
+    H = np.zeros((n, n))
+    g = np.zeros(n)
+    f0 = fun(x0, **kwargs)
+
+    vdx = dx*np.ones(n)
+    A = np.diag(vdx/2.0)
+
+    for j in range(n):  # compute diagonal terms
+        # central differences
+        f1 = fun(x0 + 2*A[:, j], **kwargs)
+        f2 = fun(x0 - 2*A[:, j], **kwargs)
+        H[j,j] = f1 + f2 - 2*f0
+        g[j] = (f1 - f2)/2
+
+    for j in range(n-1):  # compute cross terms
+        for i in range(j+1, n):
+            # central differences
+            f11 = fun(x0 + A[:, j] + A[:, i], **kwargs)
+            f22 = fun(x0 - A[:, j] - A[:, i], **kwargs)
+            f12 = fun(x0 + A[:, j] - A[:, i], **kwargs)
+            f21 = fun(x0 - A[:, j] + A[:, i], **kwargs)
+            H[j, i] = f11 + f22 - f12 - f21
+            H[i, j] = H[j, i]
+
+    H = H / dx / dx
+    g = g / dx
+    
+    return H, g

@@ -4,6 +4,7 @@ from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import spsolve
 
 from .getMAP import getMAP, getPosteriorTerms
+from psytrack.helper.jacHessCheck import compHess
 from psytrack.helper.helperFunctions import (
     DTinv_v,
     Dinv_v,
@@ -167,22 +168,45 @@ def hyperOpt(dat, hyper, weights, optList, method=None, showOpt=0, jump=2):
 
     # # If hyperparameters converged, recalculate evidence and wMode
     # # If evidence is not improving, no need to recalculate, jump to end
-    # if current_jump:
-    #     # Calculate true evidence of final set of hyperopt
-    #     wMode, Hess, logEvd, llstruct = getMAP_PBups(dat,current_hyper,weights,
-    #                                   method=method, showOpt=int(showOpt>1))
+    if current_jump:
+        wMode, Hess, logEvd, llstruct = getMAP(
+            dat,
+            current_hyper,
+            weights,
+            E0=E0,
+            method=method,
+            showOpt=int(showOpt > 1))
 
-    #     if logEvd >= best_logEvd:
-    #         best_hyper = current_hyper.copy()
-    #         best_logEvd = logEvd
-    #         best_wMode = wMode
+        # Now decouple prior terms from likelihood terms and store values
+        K = llstruct["lT"]["ddlogli"]["K"]
+        H = llstruct["lT"]["ddlogli"]["H"]
+        ddlogprior = llstruct["pT"]["ddlogprior"]
+        eMode = llstruct["eMode"]
+
+        LL_v = DTinv_v(H @ Dinv_v(eMode, K), K) + ddlogprior @ eMode
+
+        opt_keywords.update({
+            "LL_terms": llstruct["lT"]["ddlogli"],
+            "LL_v": LL_v
+        })            
+
+        numerical_hess = compHess(fun=hyperOpt_lossfun,
+                                  x0=np.array(result.x),
+                                  dx=1e-3,
+                                  kwargs={"keywords" : opt_keywords})
+        hyper_err = np.sqrt(np.diag(np.linalg.inv(numerical_hess[0])))
+
+        if logEvd: # >= best_logEvd:
+            best_hyper = current_hyper.copy()
+            best_logEvd = logEvd
+            best_wMode = wMode
 
     if showOpt:
         print("Coverged! Final evidence:", np.round(best_logEvd, 5))
         for val in optList:
             print(val, np.round(np.log2(best_hyper[val]), 4))
 
-    return best_hyper, best_logEvd, best_wMode, best_Hess, result.hess_inv
+    return best_hyper, best_logEvd, best_wMode, best_Hess, hyper_err
 
 
 def hyperOpt_lossfun(optVals, keywords):
