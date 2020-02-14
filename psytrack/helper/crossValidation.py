@@ -43,9 +43,12 @@ def Kfold_crossVal(D, F=10, seed=None):
         train_array = np.zeros(N)
         test2 = test.copy()
         while len(test2) > 0:
-            train_array[test2 - 1] += 1
+            train_array[test2] += 1
             test2 = np.array([i for i in test2 if i + 1 in test2])
-        train_array = train_array[train]
+        if 0 not in train:
+            train_array = train_array[train - 1]
+        else:
+            train_array = np.hstack(([0], train_array[train[1:] - 1]))
 
         ### Shift any overnight gaps in test set back into training set
         if "dayLength" in D:
@@ -139,5 +142,19 @@ def Kfold_crossVal_check(testD, wMode, missing_trials, weights):
 
             ### Increment tracker of test trial index
             test_count += 1
+
+    # Account for test trials at end
+    for _ in range(len(g) - np.sum(missing_trials, dtype=int)):
+            
+        ### Use last training weights
+        gw = g[test_count] @ wMode[:, -1]
+        yt = int(testD["y"][test_count]) - 1
+
+        ### Save loglikelihood and gw value of each term in test set
+        logli += [yt * gw - np.logaddexp(0, gw)]
+        all_gw += [gw]
+
+        ### Increment tracker of test trial index
+        test_count += 1 
 
     return np.array(logli), np.array(all_gw)

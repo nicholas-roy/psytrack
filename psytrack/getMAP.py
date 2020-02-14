@@ -30,7 +30,8 @@ def getMAP(dat, hyper, weights, method=None, E0=None, showOpt=0):
         maxIter : max iterations of the optimizer
 
     Returns:
-        wMode : MAP estimate of the weights
+        wMode : MAP estimate of the weights, ordered alphabetically as
+            specified in `weights`.
         Hess : the Hessian of the log posterior at wMode, used for Laplace appx.
             in evidence max in this case, is a dict of sparse terms needed to
             construct Hess (which is not sparse)
@@ -48,6 +49,12 @@ def getMAP(dat, hyper, weights, method=None, E0=None, showOpt=0):
             dat["inputs"]) is not dict:
         raise Exception("getMAP_PBups: insufficient input, missing y")
     N = len(dat["y"])
+    
+    # Check validity of "y", must be 1 and 2 (fix if 0 and 1)
+    if np.array_equal(np.unique(dat["y"]), [0, 1]):
+        dat["y"] += 1
+    elif not np.array_equal(np.unique(dat["y"]), [1, 2]):
+        raise Exception("getMAP_PBups: y must be parametrized as 1 and 2 only.")
 
     # Check and count weights
     K = 0

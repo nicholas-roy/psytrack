@@ -183,7 +183,7 @@ def recoverSim(data, N=None, iteration=0, save=False):
     # Readin simulation input
     if type(data) is str:
         save_dict["simfile"] = data
-        readin = np.load(data)["save_dict"].item()
+        readin = np.load(data, allow_pickle=True)["save_dict"].item()
     elif type(data) is dict:
         readin = data
     else:
@@ -225,7 +225,8 @@ def recoverSim(data, N=None, iteration=0, save=False):
 
     # Run recovery, recording duration of recoverty
     START = datetime.now()
-    hyp, evd, wMode, hess, hyper_err = hyperOpt(dat, hyper_guess, weights, optList)
+    hyp, evd, wMode, hess_info = hyperOpt(dat, hyper_guess, weights, optList,
+                                          hess_calc="All")
     END = datetime.now()
 
     save_dict.update({
@@ -234,8 +235,7 @@ def recoverSim(data, N=None, iteration=0, save=False):
         "hyp": hyp,
         "evd": evd,
         "wMode": wMode,
-        "hess" : hess,
-        "hyper_err" : hyper_err,
+        "hess_info" : hess_info,
         "duration": END - START
     })
 
