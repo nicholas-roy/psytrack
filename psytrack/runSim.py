@@ -12,9 +12,7 @@ def generateSim(K=4,
                 iterations=20,
                 seed=None,
                 savePath=None):
-    """Simulates weights, in addition to inputs and multiple realizations
-    of responses. Simulation data is either saved to a file or returned
-    directly.
+    '''Simulates weights, inputs, and choices under the model.
 
     Args:
         K : int, number of weights to simulate
@@ -37,7 +35,7 @@ def generateSim(K=4,
             simulation data was saved in the local directory
         save_dict | (if no SavePath) : dict, contains all relevant info
             from the simulation 
-    """
+    '''
 
     # Reproducability
     np.random.seed(seed)
@@ -47,45 +45,45 @@ def generateSim(K=4,
     sigInitDefault = np.array([4.0] * K)
     sigDayDefault = 2**np.random.choice([1.0, 0.0, -1.0], size=K)
 
-    if "sigma" not in hyper:
+    if 'sigma' not in hyper:
         sigma = sigmaDefault
-    elif hyper["sigma"] is None:
+    elif hyper['sigma'] is None:
         sigma = sigmaDefault
-    elif np.isscalar(hyper["sigma"]):
-        sigma = np.array([hyper["sigma"]] * K)
-    elif ((type(hyper["sigma"]) in [np.ndarray, list]) and
-          (len(hyper["sigma"]) == K)):
-        sigma = hyper["sigma"]
+    elif np.isscalar(hyper['sigma']):
+        sigma = np.array([hyper['sigma']] * K)
+    elif ((type(hyper['sigma']) in [np.ndarray, list]) and
+          (len(hyper['sigma']) == K)):
+        sigma = hyper['sigma']
     else:
-        raise Exception("hyper['sigma'] must be either a scalar or a list or "
-                        "array of len K")
+        raise Exception('hyper["sigma"] must be either a scalar or a list or '
+                        'array of len K')
 
-    if "sigInit" not in hyper:
+    if 'sigInit' not in hyper:
         sigInit = sigInitDefault
-    elif hyper["sigInit"] is None:
+    elif hyper['sigInit'] is None:
         sigInit = sigInitDefault
-    elif np.isscalar(hyper["sigInit"]):
-        sigInit = np.array([hyper["sigInit"]] * K)
-    elif (type(hyper["sigInit"]) in [np.ndarray, list]) and (len(hyper["sigInit"]) == K):
-        sigInit = hyper["sigInit"]
+    elif np.isscalar(hyper['sigInit']):
+        sigInit = np.array([hyper['sigInit']] * K)
+    elif (type(hyper['sigInit']) in [np.ndarray, list]) and (len(hyper['sigInit']) == K):
+        sigInit = hyper['sigInit']
     else:
-        raise Exception("hyper['sigInit'] must be either a scalar or a list or "
-                        "array of len K.")
+        raise Exception('hyper["sigInit"] must be either a scalar or a list or '
+                        'array of len K.')
 
     if days is None:
         sigDay = None
-    elif "sigDay" not in hyper:
+    elif 'sigDay' not in hyper:
         sigDay = sigDayDefault
-    elif hyper["sigDay"] is None:
+    elif hyper['sigDay'] is None:
         sigDay = sigDayDefault
-    elif np.isscalar(hyper["sigDay"]):
-        sigDay = np.array([hyper["sigDay"]] * K)
-    elif ((type(hyper["sigDay"]) in [np.ndarray, list]) and
-          (len(hyper["sigDay"]) == K)):
-        sigDay = hyper["sigDay"]
+    elif np.isscalar(hyper['sigDay']):
+        sigDay = np.array([hyper['sigDay']] * K)
+    elif ((type(hyper['sigDay']) in [np.ndarray, list]) and
+          (len(hyper['sigDay']) == K)):
+        sigDay = hyper['sigDay']
     else:
-        raise Exception("hyper['sigDay'] must be either a scalar or a list or "
-                        "array of len K.")
+        raise Exception('hyper["sigDay"] must be either a scalar or a list or '
+                        'array of len K.')
 
     # -------------
     # Simulation
@@ -115,15 +113,15 @@ def generateSim(K=4,
 
     # Save data
     save_dict = {
-        "sigInit": sigInit,
-        "sigDay" : sigDay,
-        "sigma": sigma,
-        "dayLength" : days,
-        "seed": seed,
-        "W": W,
-        "X": X,
-        "K": K,
-        "N": N,
+        'sigInit': sigInit,
+        'sigDay' : sigDay,
+        'sigma': sigma,
+        'dayLength' : days,
+        'seed': seed,
+        'W': W,
+        'X': X,
+        'K': K,
+        'N': N,
     }
 
     # Simulate behavioral realizations in advance
@@ -136,15 +134,15 @@ def generateSim(K=4,
         all_simy += [sim_y]
 
     # Update saved data to include behavior
-    save_dict.update({"all_Y": all_simy})
+    save_dict.update({'all_Y': all_simy})
 
     # Save & return file path OR return simulation data
     if savePath is not None:
         # Creates unique file name from current datetime
-        folder = datetime.now().strftime("%Y%m%d_%H%M%S") + savePath
+        folder = datetime.now().strftime('%Y%m%d_%H%M%S') + savePath
         makedirs(folder)
 
-        fullSavePath = folder + "/sim.npz"
+        fullSavePath = folder + '/sim.npz'
         np.savez_compressed(fullSavePath, save_dict=save_dict)
 
         return fullSavePath
@@ -154,7 +152,8 @@ def generateSim(K=4,
 
 
 def recoverSim(data, N=None, iteration=0, save=False):
-    """Recovers weights from the simulation data generated by generateSim()
+    '''Recovers weights from the simulation data generated by generateSim().
+    
     Can take in a filepath pointing to simulation data, or the simulation
     dict directly. Specify how many trials of data should be recovered, 
     and from which behavioral iteration (only one). Output is either saved
@@ -175,77 +174,77 @@ def recoverSim(data, N=None, iteration=0, save=False):
             recovery data was saved in the local directory
         save_dict | (save=False) : dict, contains all relevant info
             from the recovery 
-    """
+    '''
 
     # Initialize saved recovery data
-    save_dict = {"iteration": iteration}
+    save_dict = {'iteration': iteration}
 
     # Readin simulation input
     if type(data) is str:
-        save_dict["simfile"] = data
-        readin = np.load(data, allow_pickle=True)["save_dict"].item()
+        save_dict['simfile'] = data
+        readin = np.load(data, allow_pickle=True)['save_dict'].item()
     elif type(data) is dict:
         readin = data
     else:
-        raise Exception("data must be either file name or dict")
+        raise Exception('data must be either file name or dict')
 
     # If number of trials not specified, use all trials of simulation
     if N is None:
-        N = readin["N"]
-    save_dict["N"] = N
+        N = readin['N']
+    save_dict['N'] = N
 
     # -------------
     # Recovery
     # -------------
 
     # Initialization of recovery
-    K = readin["K"]
-    weights = {"x": K}
+    K = readin['K']
+    weights = {'x': K}
     hyper_guess = {
         # 2**-6 is an arbitrary starting point for the search
-        "sigma": [2**-6] * K,
-        "sigInit": [2**4] * K,
-        "sigDay": None,
+        'sigma': [2**-6] * K,
+        'sigInit': [2**4] * K,
+        'sigDay': None,
     }
-    optList = ["sigma"]
+    optList = ['sigma']
     dat = {
-        "inputs": {
-            "x": readin["X"][:N, :K]
+        'inputs': {
+            'x': readin['X'][:N, :K]
         },
-        "y": readin["all_Y"][iteration][:N]
+        'y': readin['all_Y'][iteration][:N]
     }
         
     # Detect whether to include sigDay in optimization
-    if "dayLength" in readin and readin["dayLength"] is not None:
+    if 'dayLength' in readin and readin['dayLength'] is not None:
         # 2**-1 is an arbitrary starting point for the search
-        hyper_guess["sigDay"] = [2**-1] * K
-        optList = ["sigma", "sigDay"]
-        dat["dayLength"] = readin["dayLength"]
+        hyper_guess['sigDay'] = [2**-1] * K
+        optList = ['sigma', 'sigDay']
+        dat['dayLength'] = readin['dayLength']
 
 
     # Run recovery, recording duration of recoverty
     START = datetime.now()
     hyp, evd, wMode, hess_info = hyperOpt(dat, hyper_guess, weights, optList,
-                                          hess_calc="All")
+                                          hess_calc='All')
     END = datetime.now()
 
     save_dict.update({
-        "K": K,
-        "input" : data,
-        "hyp": hyp,
-        "evd": evd,
-        "wMode": wMode,
-        "hess_info" : hess_info,
-        "duration": END - START
+        'K': K,
+        'input' : data,
+        'hyp': hyp,
+        'evd': evd,
+        'wMode': wMode,
+        'hess_info' : hess_info,
+        'duration': END - START
     })
 
     # Save (only if generateSim was also saved) or return recovery results
     if save:
-        if "simfile" not in save_dict:
+        if 'simfile' not in save_dict:
             raise Exception(
-                "Can only save recovery if generateSim was also saved")
-        save_path = (save_dict["simfile"][:-4] + "_N" + str(N) + "_i" +
-                     str(iteration) + ".npz")
+                'Can only save recovery if generateSim was also saved')
+        save_path = (save_dict['simfile'][:-4] + '_N' + str(N) + '_i' +
+                     str(iteration) + '.npz')
         np.savez_compressed(save_path, save_dict=save_dict)
         return save_path
 

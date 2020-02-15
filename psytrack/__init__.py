@@ -1,7 +1,9 @@
-name = "psytrack"
+name = 'psytrack'
 
-from .hyperOpt import hyperOpt
-from .runSim import generateSim, recoverSim
-from .helper.crossValidation import Kfold_crossVal, Kfold_crossVal_check
+from .helper.crossValidation import crossValidate
 from .helper.helperFunctions import read_input, trim
-from .plot.analysisFunctions import *
+from .hyperOpt import hyperOpt
+from .plot.analysisFunctions import (
+    plot_weights, plot_bias, plot_performance, COLORS
+)
+from .runSim import generateSim, recoverSim

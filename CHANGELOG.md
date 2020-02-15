@@ -12,6 +12,7 @@
 - Update documentation to clarify that the order of weights returned in `wMode` is alphabetical with respect to the dictionary `weights`.
 - Adjust the `__init__.py` file to make commonly used functions more directly accessible.
 - Large improvements in the plotting functions, including more modularity and configurability.
+- Made cross-validation much more straightforward, should be able to get log-likelihood direct from a single function now.
 
 
 ## 1.1.0 (June 18, 2019)

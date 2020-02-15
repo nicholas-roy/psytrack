@@ -15,11 +15,27 @@ ZORDER = {'bias' : 2,
           'sR' : 3, 'sL' : 3,
           'cR' : 3, 'cL' : 3,
           'c' : 1, 'h' : 1, 's_avg' : 1}
-BIAS_COLORS = {50 : 'None', 20 : COLORS['sR'], 80 : COLORS['sL']}
 
 
-def plot_weights(W, weights, figsize=(3.75,1.4),
+def plot_weights(W, weight_dict, figsize=(3.75,1.4),
                  colors=None, zorder=None, errorbar=None, days=None):
+    '''Plots weights in a quick and reasonable way.
+    
+    Args:
+        W: weights to plot.
+        weight_dict: names of weights in W, used to color and label lines.
+        figsize: size of figure.
+        colors: a dict mapping weight names from `weight_dict` to colors.
+            Defaults to nice preset values for common weight names.
+        zorder: a dict mapping weight names from `weight_dict` to zorder.
+            Defaults to nice preset values for common weight names.
+        errorbar: optional array for size a 1 standard error at each trial
+            for each weight (same shape as W).
+        days: list of session lengths or trials index of session boundaries.
+    
+    Returns:
+        fig: The figure, to be modified further if necessary.
+    '''
     
     # Some useful values to have around
     N = len(W[0])
@@ -27,20 +43,17 @@ def plot_weights(W, weights, figsize=(3.75,1.4),
     if colors is None: colors = COLORS
     if zorder is None: zorder = ZORDER
 
-    ### Plotting
-    fig = plt.figure(figsize=figsize)        
-
     # Infer (alphabetical) order of weights from dict
     labels = []
-    for j in sorted(weights.keys()):
-        labels += [j]*weights[j]
+    for j in sorted(weight_dict.keys()):
+        labels += [j]*weight_dict[j]
 
+    # Plot weights and credible intervals
+    fig = plt.figure(figsize=figsize)        
     for i, w in enumerate(labels):
-
-        plt.plot(W[i], lw=1.5, alpha=0.8, ls='-', c=colors[w], zorder=zorder[w])
-
-        # Plot errorbars on weights
-        if errorbar is not None:
+        plt.plot(W[i], lw=1.5, alpha=0.8, ls='-', c=colors[w],
+                 zorder=zorder[w], label=w)
+        if errorbar is not None:  # Plot 95% credible intervals on weights
             plt.fill_between(np.arange(N),
                              W[i]-2*errorbar[i], W[i]+2*errorbar[i], 
                              facecolor=colors[w], zorder=zorder[w], alpha=0.2)
@@ -48,44 +61,43 @@ def plot_weights(W, weights, figsize=(3.75,1.4),
     # Plot vertical session lines
     if days is not None:
         if type(days) not in [list, np.ndarray]:
-            raise Exception("days must be a list or array.")
+            raise Exception('days must be a list or array.')
         if days[-1] < N/2:  # this means day lengths were passed
             days = np.cumsum(days)
         for d in days:
             plt.axvline(d, c='black', ls='-', lw=0.5, alpha=0.5, zorder=0)
 
+    # Further tweaks to make plot nice
     plt.gca().spines['right'].set_visible(False)
     plt.gca().spines['top'].set_visible(False)
-    plt.axhline(0, c="black", ls="--", lw=1, alpha=0.5, zorder=0)
+    plt.axhline(0, c='black', ls='--', lw=1, alpha=0.5, zorder=0)
     plt.ylim(-maxval, maxval); plt.xlim(0, N)
     plt.gca().set_yticks(np.arange(-int(maxval), int(maxval)+1,1))
-    plt.xlabel("Trial #"); plt.ylabel("Weights")
+    plt.xlabel('Trial #'); plt.ylabel('Weights')
     
     return fig
-
-
-def addBiasBlocks(fig, pL):
-    plt.sca(fig.gca())
-    i = 0
-    while i < len(pL):
-        start = i
-        while i+1 < len(pL) and np.linalg.norm(pL[i] - pL[i+1]) < 0.0001:
-            i += 1
-        fc = BIAS_COLORS[int(100 * pL[start])]
-        plt.axvspan(start, i+1, facecolor=fc, alpha=0.2, edgecolor=None)
-        i += 1
-    return fig
     
     
-def plot_performance(dat, prediction, sigma=50, figsize=None):
+def plot_performance(dat, xval_pL, sigma=50, figsize=None):
+    '''Plots empirical and cross-validated prediction of performance.
+    
+    Args:
+        dat: a standard Psytrack input dataset.
+        xval_pL: array of cross-validated P(y=0) for each trial in dat, the
+            output of crossValidation().
+        sigma: option passed to gaussian_filter controling smoothing of
+            performance curve.
+        figsize: size of figure.
+    
+    Returns:
+        fig: The figure, to be modified further if necessary.
+    '''
 
-    ### Data from xval, arranges the inferred gw values from heldout data
+    if "correct" not in dat or "answer" not in dat:
+        raise Exception("Please define a `correct` {0,1} and an `answer` {1,2} "
+                        "field in `dat`.")
+    
     N = len(dat['y'])
-    X = np.array([i['gw'] for i in prediction]).flatten()
-    test_inds = np.array([i['test_inds'] for i in prediction]).flatten()
-    inds = [i for i in np.argsort(test_inds)]
-    X = X[inds]
-    pL = 1 / (1 + np.exp(X))
     answerR = (dat['answer'] == 2).astype(float)
 
     ### Plotting
@@ -111,18 +123,18 @@ def plot_performance(dat, prediction, sigma=50, figsize=None):
                      facecolor=COLORS['emp_perf'], alpha=0.3, zorder=3)
 
     # Calculate the predicted accuracy
-    pred_correct = np.abs(answerR - pL)
+    pred_correct = np.abs(answerR - xval_pL)
     smooth_pred_correct = gaussian_filter(pred_correct, sigma)
     plt.plot(smooth_pred_correct, c='k', alpha=0.75, lw=2, zorder=6)
 
     # Plot vertical session lines
-    if "dayLength" in dat and dat["dayLength"] is not None:
-        days = np.cumsum(dat["dayLength"])
+    if 'dayLength' in dat and dat['dayLength'] is not None:
+        days = np.cumsum(dat['dayLength'])
         for d in days:
             plt.axvline(d, c='k', lw=0.5, alpha=0.5, zorder=0)
     
     # Add plotting details
-    plt.axhline(0.5, c="k", ls="--", lw=1, alpha=0.5, zorder=1)
+    plt.axhline(0.5, c='k', ls='--', lw=1, alpha=0.5, zorder=1)
     plt.gca().spines['right'].set_visible(False)
     plt.gca().spines['top'].set_visible(False)
     plt.xlim(0, N); plt.ylim(0.3, 1.0)
@@ -130,15 +142,25 @@ def plot_performance(dat, prediction, sigma=50, figsize=None):
     return fig
 
 
-def plot_bias(dat, prediction, sigma=50, figsize=None):
-
-    ### Data from xval, arranges the inferred gw values from heldout data
+def plot_bias(dat, xval_pL, sigma=50, figsize=None):
+    '''Plots empirical and cross-validated prediction of bias.
+    
+    Args:
+        dat: a standard Psytrack input dataset.
+        xval_pL: array of cross-validated P(y=0) for each trial in dat, the
+            output of crossValidation().
+        sigma: option passed to gaussian_filter controling smoothing of
+            performance curve.
+        figsize: size of figure.
+    
+    Returns:
+        fig: The figure, to be modified further if necessary.
+    '''
+    
+    if "answer" not in dat:
+        raise Exception("Please define an `answer` {1,2} field in `dat`.")
+        
     N = len(dat['y'])
-    X = np.array([i['gw'] for i in prediction]).flatten()
-    test_inds = np.array([i['test_inds'] for i in prediction]).flatten()
-    inds = [i for i in np.argsort(test_inds)]
-    X = X[inds]
-    pL = 1 / (1 + np.exp(X))
     choiceR = (dat['y'] == 2).astype(float)
     answerR = (dat['answer'] == 2).astype(float)
 
@@ -164,18 +186,18 @@ def plot_bias(dat, prediction, sigma=50, figsize=None):
                      facecolor=COLORS['emp_bias'], alpha=0.3, zorder=3)
 
     ### Calculate the predicted bias
-    pred_bias = (1 - pL) - answerR
+    pred_bias = (1 - xval_pL) - answerR
     smooth_pred_bias = gaussian_filter(pred_bias, sigma)
     plt.plot(smooth_pred_bias, c='k', alpha=0.75, lw=2, zorder=6)
 
     # Plot vertical session lines
-    if "dayLength" in dat and dat["dayLength"] is not None:
-        days = np.cumsum(dat["dayLength"])
+    if 'dayLength' in dat and dat['dayLength'] is not None:
+        days = np.cumsum(dat['dayLength'])
         for d in days:
             plt.axvline(d, c='k', lw=0.5, alpha=0.5, zorder=0)
     
     # Add plotting details
-    plt.axhline(0, c="k", ls="--", lw=1, alpha=0.5, zorder=1)
+    plt.axhline(0, c='k', ls='--', lw=1, alpha=0.5, zorder=1)
     plt.gca().spines['right'].set_visible(False)
     plt.gca().spines['top'].set_visible(False)
     plt.xlim(0, N); plt.ylim(-0.5, 0.5)
