@@ -82,7 +82,7 @@ def plot_weights(W, weight_dict=None, figsize=(5, 2),
     
     
 def plot_performance(dat, xval_pL=None, sigma=50, figsize=(5, 1.5)):
-    '''Plots empirical and cross-validated prediction of performance.
+    '''Plots empirical and (optional) cross-validated prediction of performance.
     
     Args:
         dat: a standard Psytrack input dataset.
@@ -148,7 +148,7 @@ def plot_performance(dat, xval_pL=None, sigma=50, figsize=(5, 1.5)):
 
 
 def plot_bias(dat, xval_pL=None, sigma=50, figsize=(5, 1.5)):
-    '''Plots empirical and cross-validated prediction of bias.
+    '''Plots empirical and (optional) cross-validated prediction of bias.
     
     Args:
         dat: a standard Psytrack input dataset.
