@@ -18,7 +18,7 @@ from psytrack.helper.helperFunctions import (
 
 
 def hyperOpt(dat, hyper, weights, optList, method=None, showOpt=0, jump=2,
-             hess_calc=None):
+             hess_calc="weights"):
     '''Optimizes for hyperparameters and weights.
     
     Given data and set of hyperparameters, uses decoupled Laplace to find the

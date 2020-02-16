@@ -19,7 +19,6 @@ setuptools.setup(
      'markdown',
      'numpy',
      'scipy',
-     'seaborn',
      ],
 	classifiers=[
      'Programming Language :: Python :: 3',

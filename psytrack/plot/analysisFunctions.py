@@ -1,13 +1,11 @@
 import numpy as np
-import seaborn as sns
 from matplotlib import pyplot as plt
 from scipy.ndimage import gaussian_filter
 
-cmap = plt.get_cmap('vlag') #vlag0 = #2369bd; vlag1 = #a9373b
 COLORS = {'bias' : '#FAA61A', 
-          's1' : cmap(1.0), 's2' : cmap(0.0), 
-          'sR' : cmap(1.0), 'sL' : cmap(0.0),
-          'cR' : cmap(1.0), 'cL' : cmap(0.0),
+          's1' : "#A9373B", 's2' : "#2369BD", 
+          'sR' : "#A9373B", 'sL' : "#2369BD",
+          'cR' : "#A9373B", 'cL' : "#2369BD",
           'c' : '#59C3C3', 'h' : '#9593D9', 's_avg' : '#99CC66',
           'emp_perf': '#E32D91', 'emp_bias': '#9252AB'}
 ZORDER = {'bias' : 2, 
@@ -17,7 +15,7 @@ ZORDER = {'bias' : 2,
           'c' : 1, 'h' : 1, 's_avg' : 1}
 
 
-def plot_weights(W, weight_dict, figsize=(3.75,1.4),
+def plot_weights(W, weight_dict=None, figsize=(5, 2),
                  colors=None, zorder=None, errorbar=None, days=None):
     '''Plots weights in a quick and reasonable way.
     
@@ -38,15 +36,20 @@ def plot_weights(W, weight_dict, figsize=(3.75,1.4),
     '''
     
     # Some useful values to have around
-    N = len(W[0])
+    K, N = W.shape
     maxval = np.max(np.abs(W))*1.1  # largest magnitude of any weight
     if colors is None: colors = COLORS
     if zorder is None: zorder = ZORDER
 
     # Infer (alphabetical) order of weights from dict
-    labels = []
-    for j in sorted(weight_dict.keys()):
-        labels += [j]*weight_dict[j]
+    if weight_dict is not None:
+        labels = []
+        for j in sorted(weight_dict.keys()):
+            labels += [j]*weight_dict[j]
+    else:
+        labels = [i for i in range(K)]
+        colors = {i: np.unique(list(COLORS.values()))[i] for i in range(K)}
+        zorder = {i: i+1 for i in range(K)}
 
     # Plot weights and credible intervals
     fig = plt.figure(figsize=figsize)        
@@ -71,14 +74,14 @@ def plot_weights(W, weight_dict, figsize=(3.75,1.4),
     plt.gca().spines['right'].set_visible(False)
     plt.gca().spines['top'].set_visible(False)
     plt.axhline(0, c='black', ls='--', lw=1, alpha=0.5, zorder=0)
+    plt.gca().set_yticks(np.arange(-int(2*maxval), int(2*maxval)+1,1))
     plt.ylim(-maxval, maxval); plt.xlim(0, N)
-    plt.gca().set_yticks(np.arange(-int(maxval), int(maxval)+1,1))
     plt.xlabel('Trial #'); plt.ylabel('Weights')
     
     return fig
     
     
-def plot_performance(dat, xval_pL, sigma=50, figsize=None):
+def plot_performance(dat, xval_pL=None, sigma=50, figsize=(5, 1.5)):
     '''Plots empirical and cross-validated prediction of performance.
     
     Args:
@@ -123,9 +126,10 @@ def plot_performance(dat, xval_pL, sigma=50, figsize=None):
                      facecolor=COLORS['emp_perf'], alpha=0.3, zorder=3)
 
     # Calculate the predicted accuracy
-    pred_correct = np.abs(answerR - xval_pL)
-    smooth_pred_correct = gaussian_filter(pred_correct, sigma)
-    plt.plot(smooth_pred_correct, c='k', alpha=0.75, lw=2, zorder=6)
+    if xval_pL is not None:
+        pred_correct = np.abs(answerR - xval_pL)
+        smooth_pred_correct = gaussian_filter(pred_correct, sigma)
+        plt.plot(smooth_pred_correct, c='k', alpha=0.75, lw=2, zorder=6)
 
     # Plot vertical session lines
     if 'dayLength' in dat and dat['dayLength'] is not None:
@@ -138,11 +142,12 @@ def plot_performance(dat, xval_pL, sigma=50, figsize=None):
     plt.gca().spines['right'].set_visible(False)
     plt.gca().spines['top'].set_visible(False)
     plt.xlim(0, N); plt.ylim(0.3, 1.0)
-    
+    plt.xlabel('Trial #'); plt.ylabel('Performance')
+
     return fig
 
 
-def plot_bias(dat, xval_pL, sigma=50, figsize=None):
+def plot_bias(dat, xval_pL=None, sigma=50, figsize=(5, 1.5)):
     '''Plots empirical and cross-validated prediction of bias.
     
     Args:
@@ -186,9 +191,10 @@ def plot_bias(dat, xval_pL, sigma=50, figsize=None):
                      facecolor=COLORS['emp_bias'], alpha=0.3, zorder=3)
 
     ### Calculate the predicted bias
-    pred_bias = (1 - xval_pL) - answerR
-    smooth_pred_bias = gaussian_filter(pred_bias, sigma)
-    plt.plot(smooth_pred_bias, c='k', alpha=0.75, lw=2, zorder=6)
+    if xval_pL is not None:
+        pred_bias = (1 - xval_pL) - answerR
+        smooth_pred_bias = gaussian_filter(pred_bias, sigma)
+        plt.plot(smooth_pred_bias, c='k', alpha=0.75, lw=2, zorder=6)
 
     # Plot vertical session lines
     if 'dayLength' in dat and dat['dayLength'] is not None:
@@ -200,6 +206,8 @@ def plot_bias(dat, xval_pL, sigma=50, figsize=None):
     plt.axhline(0, c='k', ls='--', lw=1, alpha=0.5, zorder=1)
     plt.gca().spines['right'].set_visible(False)
     plt.gca().spines['top'].set_visible(False)
+    plt.yticks([-0.5,0,0.5])
     plt.xlim(0, N); plt.ylim(-0.5, 0.5)
-    
+    plt.xlabel('Trial #'); plt.ylabel('Bias')
+
     return fig

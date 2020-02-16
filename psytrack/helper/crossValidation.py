@@ -2,7 +2,7 @@ import numpy as np
 from .helperFunctions import read_input
 from ..hyperOpt import hyperOpt
 
-def crossValidate(D, weight_dict, hyper_guess, optList,
+def crossValidate(D, hyper_guess, weight_dict, optList,
                   F=10, seed=None, verbose=True):
     """Calculates the xval loglikelihood and P(y=0) for each trial.
     
@@ -33,11 +33,11 @@ def crossValidate(D, weight_dict, hyper_guess, optList,
         xval_logli += np.sum(logli)
         all_gw += [gw]
         
-    gw = np.array(all_gw).flatten()
+    xval_gw = np.array(all_gw).flatten()
     test_inds = np.array([i['test_inds'] for i in test_dats]).flatten()
-    inds = [i for i in np.argsort(test_inds)]
-    gw = gw[inds]
-    xval_pL = 1 / (1 + np.exp(gw))
+    inds = np.argsort(test_inds)
+    xval_gw = xval_gw[inds]
+    xval_pL = 1 / (1 + np.exp(xval_gw))
     
     return xval_logli, xval_pL
     
@@ -92,7 +92,7 @@ def split_data(D, F=10, seed=None):
         test2 = test.copy()
         while len(test2) > 0:
             train_array[test2] += 1
-            test2 = np.array([i for i in test2 if i + 1 in test2])
+            test2 = np.array([i for i in test2 if i - 1 in test2])
         if 0 not in train:
             train_array = train_array[train - 1]
         else:
