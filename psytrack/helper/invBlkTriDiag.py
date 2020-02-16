@@ -3,11 +3,13 @@ from scipy.sparse import csr_matrix, isspmatrix, diags, block_diag
 from scipy.sparse.linalg import inv
 from .helperFunctions import DT_X_D
 
+
 def getCredibleInterval(Hess):
     return np.sqrt(invDiagHess(Hess)).reshape(Hess['K'],-1)
 
+
 def invDiagHess(Hess):
-    """
+    '''
     True Hessian in e space: ddlogprior + DT^{-1} @ H @ D^{-1}
     Hessian in w space:  DT @ ddlogprior @ D + H, a block tridiagonal
 
@@ -16,16 +18,16 @@ def invDiagHess(Hess):
 
     Returns:
         invHess : array, the diagonal of the inverted negative Hessian
-    """
+    '''
 
     # Construct center
-    center = -(DT_X_D(Hess["ddlogprior"], Hess["K"]) + Hess["H"])
+    center = -(DT_X_D(Hess['ddlogprior'], Hess['K']) + Hess['H'])
 
     # Rearrange matrix such that it's blocked by K, not by N
-    K = Hess["K"]
-    N = int(Hess["ddlogprior"].shape[0] / K)
+    K = Hess['K']
+    N = int(Hess['ddlogprior'].shape[0] / K)
     ii = (np.reshape(np.arange(K * N), (N, -1),
-                     order="F").T).flatten(order="F")
+                     order='F').T).flatten(order='F')
     M = center[ii]
     M = M[:, ii]
 
@@ -40,7 +42,7 @@ def invDiagHess(Hess):
 
 
 def invBlkTriDiag(M, nn):
-    """
+    '''
     
     Efficiently inverts a block tridiagonal (a block diagonal matrix 
     with off-diagonal blocks) matrix. Blocks are (nn,nn) with nblocks
@@ -54,9 +56,9 @@ def invBlkTriDiag(M, nn):
         MinvDiag : values on the diagonal of inverted M
         MinvBlocks : values on the main diagonal blocks of invM
         MinvBelowDiagBlocks : values on the off diagonal blocks of invM
-    """
+    '''
     if not isspmatrix(M):
-        print("Casting M to sparse format")
+        print('Casting M to sparse format')
         M = csr_matrix(M)
 
     nblocks = int(M.shape[0] / nn)  # number of total blocks

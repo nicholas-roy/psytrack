@@ -1,8 +1,8 @@
 # PsyTrack
 
-PsyTrack is a package for fitting a dynamic psychophysical model to behavioral data as proposed in our 2018 NeurIPS paper, "[Efficient inference for time-varying behavior during learning](http://pillowlab.princeton.edu/pubs/Roy18_NeurIPS_dynamicPsychophys.pdf)."
+PsyTrack is a package for fitting a dynamic psychophysical model to behavioral data as proposed in our 2018 NeurIPS paper, '[Efficient inference for time-varying behavior during learning](http://pillowlab.princeton.edu/pubs/Roy18_NeurIPS_dynamicPsychophys.pdf).'
 
-<img src="./psytrack/examples/weights.png" alt="Figure 1b from paper" height="300"/>
+<img src='./psytrack/examples/weights.png' alt='Figure 1b from paper' height='300'/>
 
 [//]: # ()
 
@@ -25,7 +25,11 @@ Nick Roy, [Ji Hyun Bak](http://newton.kias.re.kr/~jhbak/), and [Jonathan Pillow]
 
 Please cite as:
 
+<<<<<<< HEAD
 Roy NA, Bak JH, Akrami A, Brody CD, & Pillow JW (2018). [Efficient inference for time-varying behavior during learning.](http://pillowlab.princeton.edu/pubs/abs_Roy_NeurIPS18.html)
 _Advances in Neural Information Processing Systems_ 31, 5696-5706.  (2018).
+=======
+Roy, Nicholas A., et al. 'Efficient inference for time-varying behavior during learning.' _Advances in Neural Information Processing Systems_. 2018.
+>>>>>>> NickPlay
 
 [//]: # (readme template from https://github.com/HIPS/autograd)
