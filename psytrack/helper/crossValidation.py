@@ -27,7 +27,7 @@ def crossValidate(D, hyper_guess, weight_dict, optList,
     for f in range(F):
         if verbose: print("Running xval fold", f+1)
         _, _, wMode, _ = hyperOpt(train_dats[f], hyper_guess, weight_dict,
-                                  optList)
+                                  optList, hess_calc=None)
         logli, gw = xval_loglike(test_dats[f], wMode,
                                  train_dats[f]['missing_trials'], weight_dict)
         xval_logli += np.sum(logli)

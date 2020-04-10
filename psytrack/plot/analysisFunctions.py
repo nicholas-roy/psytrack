@@ -58,7 +58,7 @@ def plot_weights(W, weight_dict=None, figsize=(5, 2),
                  zorder=zorder[w], label=w)
         if errorbar is not None:  # Plot 95% credible intervals on weights
             plt.fill_between(np.arange(N),
-                             W[i]-2*errorbar[i], W[i]+2*errorbar[i], 
+                             W[i]-1.96*errorbar[i], W[i]+1.96*errorbar[i], 
                              facecolor=colors[w], zorder=zorder[w], alpha=0.2)
 
     # Plot vertical session lines
@@ -121,8 +121,8 @@ def plot_performance(dat, xval_pL=None, sigma=50, figsize=(5, 1.5)):
         np.sum(QQQ**2) * gaussian_filter(
             (raw_correct - smooth_correct)**2, sigma))
     plt.fill_between(range(N),
-                     smooth_correct - 2 * perf_errorbars,
-                     smooth_correct + 2 * perf_errorbars,
+                     smooth_correct - 1.96 * perf_errorbars,
+                     smooth_correct + 1.96 * perf_errorbars,
                      facecolor=COLORS['emp_perf'], alpha=0.3, zorder=3)
 
     # Calculate the predicted accuracy
@@ -186,8 +186,8 @@ def plot_bias(dat, xval_pL=None, sigma=50, figsize=(5, 1.5)):
     bias_errorbars = np.sqrt(
         np.sum(QQQ**2) * gaussian_filter((raw_bias - smooth_bias)**2, sigma))
     plt.fill_between(range(N),
-                     smooth_bias - 2 * bias_errorbars,
-                     smooth_bias + 2 * bias_errorbars,
+                     smooth_bias - 1.96 * bias_errorbars,
+                     smooth_bias + 1.96 * bias_errorbars,
                      facecolor=COLORS['emp_bias'], alpha=0.3, zorder=3)
 
     ### Calculate the predicted bias
