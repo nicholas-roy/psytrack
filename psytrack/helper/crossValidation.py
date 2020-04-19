@@ -25,7 +25,8 @@ def crossValidate(D, hyper_guess, weight_dict, optList,
     xval_logli = 0
     all_gw = []
     for f in range(F):
-        if verbose: print("Running xval fold", f+1)
+        if verbose:
+            print("\rRunning xval fold " + str(f+1) + " of " + str(F), end="")
         _, _, wMode, _ = hyperOpt(train_dats[f], hyper_guess, weight_dict,
                                   optList, hess_calc=None)
         logli, gw = xval_loglike(test_dats[f], wMode,
