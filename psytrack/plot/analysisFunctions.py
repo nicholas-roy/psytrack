@@ -4,12 +4,14 @@ from scipy.ndimage import gaussian_filter
 
 COLORS = {'bias' : '#FAA61A', 
           's1' : "#A9373B", 's2' : "#2369BD", 
+          's_a' : "#A9373B", 's_b' : "#2369BD", 
           'sR' : "#A9373B", 'sL' : "#2369BD",
           'cR' : "#A9373B", 'cL' : "#2369BD",
           'c' : '#59C3C3', 'h' : '#9593D9', 's_avg' : '#99CC66',
           'emp_perf': '#E32D91', 'emp_bias': '#9252AB'}
 ZORDER = {'bias' : 2, 
           's1' : 3, 's2' : 3, 
+          's_a' : 3, 's_b' : 3, 
           'sR' : 3, 'sL' : 3,
           'cR' : 3, 'cL' : 3,
           'c' : 1, 'h' : 1, 's_avg' : 1}
@@ -58,17 +60,18 @@ def plot_weights(W, weight_dict=None, figsize=(5, 2),
                  zorder=zorder[w], label=w)
         if errorbar is not None:  # Plot 95% credible intervals on weights
             plt.fill_between(np.arange(N),
-                             W[i]-2*errorbar[i], W[i]+2*errorbar[i], 
+                             W[i]-1.96*errorbar[i], W[i]+1.96*errorbar[i], 
                              facecolor=colors[w], zorder=zorder[w], alpha=0.2)
 
     # Plot vertical session lines
     if days is not None:
         if type(days) not in [list, np.ndarray]:
             raise Exception('days must be a list or array.')
-        if days[-1] < N/2:  # this means day lengths were passed
+        if np.sum(days) <= N:  # this means day lengths were passed
             days = np.cumsum(days)
         for d in days:
-            plt.axvline(d, c='black', ls='-', lw=0.5, alpha=0.5, zorder=0)
+            if d < N:
+                plt.axvline(d, c='black', ls='-', lw=0.5, alpha=0.5, zorder=0)
 
     # Further tweaks to make plot nice
     plt.gca().spines['right'].set_visible(False)
@@ -101,7 +104,10 @@ def plot_performance(dat, xval_pL=None, sigma=50, figsize=(5, 1.5)):
                         "field in `dat`.")
     
     N = len(dat['y'])
-    answerR = (dat['answer'] == 2).astype(float)
+    if 2 in np.unique(dat['answer']):
+        answerR = (dat['answer'] == 2).astype(float)
+    else:
+        answerR = (dat['answer'] == 1).astype(float)
 
     ### Plotting
     fig = plt.figure(figsize=figsize)        
@@ -121,8 +127,8 @@ def plot_performance(dat, xval_pL=None, sigma=50, figsize=(5, 1.5)):
         np.sum(QQQ**2) * gaussian_filter(
             (raw_correct - smooth_correct)**2, sigma))
     plt.fill_between(range(N),
-                     smooth_correct - 2 * perf_errorbars,
-                     smooth_correct + 2 * perf_errorbars,
+                     smooth_correct - 1.96 * perf_errorbars,
+                     smooth_correct + 1.96 * perf_errorbars,
                      facecolor=COLORS['emp_perf'], alpha=0.3, zorder=3)
 
     # Calculate the predicted accuracy
@@ -166,8 +172,14 @@ def plot_bias(dat, xval_pL=None, sigma=50, figsize=(5, 1.5)):
         raise Exception("Please define an `answer` {1,2} field in `dat`.")
         
     N = len(dat['y'])
-    choiceR = (dat['y'] == 2).astype(float)
-    answerR = (dat['answer'] == 2).astype(float)
+    if 2 in np.unique(dat['y']):
+        choiceR = (dat['y'] == 2).astype(float)
+    else:
+        choiceR = (dat['y'] == 1).astype(float)
+    if 2 in np.unique(dat['answer']):
+        answerR = (dat['answer'] == 2).astype(float)
+    else:
+        answerR = (dat['answer'] == 1).astype(float)
 
     ### Plotting
     fig = plt.figure(figsize=figsize)        
@@ -186,8 +198,8 @@ def plot_bias(dat, xval_pL=None, sigma=50, figsize=(5, 1.5)):
     bias_errorbars = np.sqrt(
         np.sum(QQQ**2) * gaussian_filter((raw_bias - smooth_bias)**2, sigma))
     plt.fill_between(range(N),
-                     smooth_bias - 2 * bias_errorbars,
-                     smooth_bias + 2 * bias_errorbars,
+                     smooth_bias - 1.96 * bias_errorbars,
+                     smooth_bias + 1.96 * bias_errorbars,
                      facecolor=COLORS['emp_bias'], alpha=0.3, zorder=3)
 
     ### Calculate the predicted bias

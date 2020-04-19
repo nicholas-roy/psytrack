@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
 	name='psytrack',
-	version='1.2.0',
+	version='1.3.0',
 	description='Tool for tracking dynamic psychometric curves',
 	long_description=long_description,
 	long_description_content_type='text/markdown',
