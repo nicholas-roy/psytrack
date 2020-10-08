@@ -42,7 +42,6 @@ def getMAP(dat, hyper, weights, method=None, E0=None, showOpt=0):
     # -----
     # Initializations and Sanity Checks
     # -----
-
     # Check and count trials
     if 'inputs' not in dat or 'y' not in dat or type(
             dat['inputs']) is not dict:

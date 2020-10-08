@@ -149,7 +149,7 @@ def read_input(D, w):
     for i in sorted(w.keys()):
         if i == 'bias':
             g[:, g_ind:g_ind + 1] = 1
-        else:
+        elif w[i] > 0:
             try:
                 g[:, g_ind:g_ind + w[i]] = D['inputs'][i][:, :w[i]]
             except:
@@ -201,7 +201,7 @@ def trim(dat, START=0, END=0):
 
         try:
             if N == dat[k].shape[0]:
-                new_dat[k] = dat[k][START:END]
+                new_dat[k] = dat[k][START:END].copy()
             else:
                 new_dat[k] = dat[k].copy()
         except:
