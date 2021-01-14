@@ -1,5 +1,15 @@
 # Changelog (PsyTrack)
 
+## 2.0.1 (January 13, 2021)
+
+- Update to README to reflect publication in Neuron.
+
+
+## 2.0.0 (November 21, 2020)
+
+- Primarily superficial changes ahead of the release of final paper.
+
+
 ## 1.3.0 (April 18, 2020)
 
 - Added a `hess_calc` argument to `recoverSim` to control whether error bars are calculated in the recovery of simulated weights.
