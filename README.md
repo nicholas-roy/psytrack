@@ -2,7 +2,7 @@
 
 PsyTrack is a package for fitting a dynamic psychophysical model to behavioral data as described in our 2021 _Neuron_ paper, '[Extracting the dynamics of behavior in sensory decision-making experiments](https://authors.elsevier.com/a/1cMvC3BtfGx4U4).'
 
-<img src='./psytrack/examples/GraphicalAbstract.png' alt='Graphical abstract from Neuron paper' height='300'/>
+<img align='center' src='./psytrack/examples/GraphicalAbstract.png' alt='Graphical abstract from Neuron paper' height='600'/>
 
 [//]: # ()
 
