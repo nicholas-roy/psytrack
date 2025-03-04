@@ -1,5 +1,9 @@
 # Changelog (PsyTrack)
 
+## 2.0.2 (March 3, 2025)
+
+- Update to README to reflect publication in Neuron.
+
 ## 2.0.1 (January 13, 2021)
 
 - Update to README to reflect publication in Neuron.

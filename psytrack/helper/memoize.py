@@ -31,7 +31,7 @@ class memoize(object):
     # Checks if x has changed since last call and, if so, recalculates
     # Returns value of function at x
     def __call__(self, x, *args, **kwargs):
-        if self.value is not None and np.alltrue(x == self.x):
+        if self.value is not None and np.all(x == self.x):
             return self.value
         else:
             self._compute(x, *args, **kwargs)
@@ -40,7 +40,7 @@ class memoize(object):
     # Checks if x has changed since last call and, if so, recalculates
     # Returns jacobian of function at x
     def jacobian(self, x, *args, **kwargs):
-        if self.jac is not None and np.alltrue(x == self.x):
+        if self.jac is not None and np.all(x == self.x):
             return self.jac
         else:
             self._compute(x, *args, **kwargs)
@@ -49,7 +49,7 @@ class memoize(object):
     # Checks if x has changed since last call and, if so, recalculates
     # Returns hessian of function at x (in the form of a dict)
     def hessian(self, x, *args, **kwargs):
-        if self.hess is not None and np.alltrue(x == self.x):
+        if self.hess is not None and np.all(x == self.x):
             return self.hess
         else:
             self._compute(x, *args, **kwargs)
@@ -58,7 +58,7 @@ class memoize(object):
     # Checks if x has changed since last call and, if so, recalculates
     # Returns product of hessian with arbitrary vector p (for optimization)
     def hessian_prod(self, x, p, *args, **kwargs):
-        if self.hess is not None and np.alltrue(x == self.x):
+        if self.hess is not None and np.all(x == self.x):
             pass
         else:
             self._compute(x, *args, **kwargs)
